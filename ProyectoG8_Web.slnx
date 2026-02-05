@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="ProyectoG8_API/ProyectoG8_API.csproj" />
+  <Project Path="ProyectoG8_Web/ProyectoG8_Web.csproj" />
+</Solution>
