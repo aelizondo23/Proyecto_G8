@@ -1,0 +1,160 @@
+﻿@{
+    ViewData["Title"] = "Registro";
+}
+
+<div class="auth-shell">
+    <div class="glass p-3 p-md-4 auth-card">
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="brand-badge"><i class="bi bi-person-plus"></i></span>
+            <div>
+                <div class="fw-bold fs-4">Crear cuenta</div>
+                <div class="muted">Regístrate como Técnico o como Empresa/Persona que busca técnicos.</div>
+            </div>
+        </div>
+
+        <hr style="border-color: rgba(255,255,255,.12);" />
+
+        <form>
+            <!-- Rol -->
+            <div class="mb-3">
+                <label class="form-label">Tipo de cuenta</label>
+                <div class="row g-2">
+                    <div class="col-12 col-md-6">
+                        <input type="radio" class="btn-check" name="role" id="roleTech" checked>
+                        <label class="btn btn-ghost w-100 py-3" for="roleTech">
+                            <div class="fw-bold"><i class="bi bi-tools me-1"></i>Técnico</div>
+                            <div class="muted" style="font-size:.9rem;">Aplica a solicitudes y gestiona órdenes.</div>
+                        </label>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <input type="radio" class="btn-check" name="role" id="roleCompany">
+                        <label class="btn btn-ghost w-100 py-3" for="roleCompany">
+                            <div class="fw-bold"><i class="bi bi-building me-1"></i>Empresa / Persona</div>
+                            <div class="muted" style="font-size:.9rem;">Publica solicitudes y contrata técnicos.</div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Datos comunes -->
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Nombre</label>
+                    <input class="form-control" placeholder="Ej. Juan" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Apellidos</label>
+                    <input class="form-control" placeholder="Ej. Pérez" />
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">Correo</label>
+                    <input type="email" class="form-control" placeholder="correo@dominio.com" />
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Contraseña</label>
+                    <input type="password" class="form-control" placeholder="••••••••" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Confirmar contraseña</label>
+                    <input type="password" class="form-control" placeholder="••••••••" />
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Teléfono</label>
+                    <input class="form-control" placeholder="+506 8888-8888" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Zona</label>
+                    <select class="form-select">
+                        <option selected>Central</option>
+                        <option>Occidente</option>
+                        <option>Caribe</option>
+                        <option>Pacífico</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Sección Técnico (visual, por ahora siempre visible) -->
+            <div class="mt-4 p-3 rounded-4" style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.10);">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="fw-bold"><i class="bi bi-tools me-1"></i>Datos de Técnico</div>
+                    <span class="chip">Freelance</span>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Habilidades (separadas por coma)</label>
+                        <input class="form-control" placeholder="Ej: Electricidad, CCTV, Redes, Refrigeración..." />
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Años de experiencia</label>
+                        <select class="form-select">
+                            <option>0-1</option>
+                            <option>2-3</option>
+                            <option selected>4-6</option>
+                            <option>7+</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Tarifa por hora</label>
+                        <div class="input-group">
+                            <span class="input-group-text" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);color:#fff;border-radius:14px 0 0 14px;">₡</span>
+                            <input class="form-control" placeholder="12000" />
+                            <span class="input-group-text" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);color:#fff;border-radius:0 14px 14px 0;">/hora</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Bio (opcional)</label>
+                        <textarea class="form-control" rows="3" placeholder="Describe tu experiencia y tipo de trabajos que aceptas..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección Empresa/Persona (visual, por ahora siempre visible) -->
+            <div class="mt-3 p-3 rounded-4" style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.10);">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="fw-bold"><i class="bi bi-building me-1"></i>Datos de Empresa / Persona</div>
+                    <span class="chip">Contratante</span>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Tipo</label>
+                        <select class="form-select">
+                            <option selected>Empresa</option>
+                            <option>Persona</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Nombre empresa / Responsable</label>
+                        <input class="form-control" placeholder="Ej: Seguridad Delta / María López" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Dirección / Ubicación (opcional)</label>
+                        <input class="form-control" placeholder="Ej: San José, Escazú..." />
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="terms" />
+                    <label class="form-check-label muted" for="terms">
+                        Acepto términos y condiciones
+                    </label>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2 mt-3">
+                <a class="btn btn-brand btn-lg" href="/Home/Login">
+                    <i class="bi bi-check2-circle me-1"></i>Crear cuenta
+                </a>
+                <a class="btn btn-ghost" href="/Home/Login">Ya tengo cuenta</a>
+            </div>
+        </form>
+    </div>
+</div>

@@ -21,5 +21,14 @@ namespace ProyectoG8_Web.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
+        public IActionResult Dashboard() => View();
+        public IActionResult Marketplace() => View();
+        public IActionResult Profile() => View();
+
+        public IActionResult Login() => View();
+
+        public IActionResult Register() => View();
+
     }
 }

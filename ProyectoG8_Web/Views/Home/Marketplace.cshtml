@@ -1,0 +1,166 @@
+﻿@{
+    ViewData["Title"] = "Marketplace";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <h2 class="mb-1 fw-bold">Marketplace</h2>
+        <div class="muted">Solicitudes de empresas buscando técnico freelance.</div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+        <input class="form-control" style="max-width: 260px;" placeholder="Buscar (ej. CCTV, red, aires...)" />
+        <select class="form-select" style="max-width: 180px;">
+            <option selected>Zona: Todas</option>
+            <option>Central</option>
+            <option>Occidente</option>
+            <option>Caribe</option>
+            <option>Pacífico</option>
+        </select>
+        <select class="form-select" style="max-width: 180px;">
+            <option selected>Tipo: Todos</option>
+            <option>Instalación</option>
+            <option>Mantenimiento</option>
+            <option>Reparación</option>
+            <option>Diagnóstico</option>
+        </select>
+        <button class="btn btn-brand px-3"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Lista de solicitudes -->
+    <div class="col-12 col-lg-7">
+        <div class="glass p-3 p-md-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0">Solicitudes abiertas</h5>
+                <span class="chip"><i class="bi bi-lightning-charge me-1"></i>Actualizado hace 2 min</span>
+            </div>
+
+            <div class="mt-3 d-grid gap-3">
+                <!-- Card solicitud 1 -->
+                <div class="p-3 rounded-4" style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.10);">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div>
+                            <div class="fw-bold fs-5">Instalación de CCTV (8 cámaras)</div>
+                            <div class="muted">Empresa: Seguridad Delta · Zona: Central</div>
+                        </div>
+                        <div class="text-end">
+                            <span class="status"><span class="dot dot-warn"></span>Urgente</span>
+                            <div class="mt-2 fw-bold">₡ 120.000</div>
+                            <div class="muted" style="font-size:.9rem;">Presupuesto</div>
+                        </div>
+                    </div>
+                    <hr style="border-color: rgba(255,255,255,.12);" />
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="chip"><i class="bi bi-clock me-1"></i>Hoy</span>
+                        <span class="chip"><i class="bi bi-gear me-1"></i>Instalación</span>
+                        <span class="chip"><i class="bi bi-wifi me-1"></i>Red requerida</span>
+                    </div>
+                    <div class="d-flex gap-2 mt-3">
+                        <button class="btn btn-ghost"><i class="bi bi-eye me-1"></i>Ver detalles</button>
+                        <button class="btn btn-brand ms-auto"><i class="bi bi-send me-1"></i>Aplicar</button>
+                    </div>
+                </div>
+
+                <!-- Card solicitud 2 -->
+                <div class="p-3 rounded-4" style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.10);">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div>
+                            <div class="fw-bold fs-5">Mantenimiento aire acondicionado</div>
+                            <div class="muted">Empresa: Torre Río · Zona: Occidente</div>
+                        </div>
+                        <div class="text-end">
+                            <span class="status"><span class="dot dot-green"></span>Normal</span>
+                            <div class="mt-2 fw-bold">₡ 45.000</div>
+                            <div class="muted" style="font-size:.9rem;">Presupuesto</div>
+                        </div>
+                    </div>
+                    <hr style="border-color: rgba(255,255,255,.12);" />
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="chip"><i class="bi bi-calendar-event me-1"></i>Esta semana</span>
+                        <span class="chip"><i class="bi bi-wrench me-1"></i>Mantenimiento</span>
+                        <span class="chip"><i class="bi bi-building me-1"></i>Edificio</span>
+                    </div>
+                    <div class="d-flex gap-2 mt-3">
+                        <button class="btn btn-ghost"><i class="bi bi-eye me-1"></i>Ver detalles</button>
+                        <button class="btn btn-brand ms-auto"><i class="bi bi-send me-1"></i>Aplicar</button>
+                    </div>
+                </div>
+
+                <!-- Card solicitud 3 -->
+                <div class="p-3 rounded-4" style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.10);">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div>
+                            <div class="fw-bold fs-5">Diagnóstico de red (intermitencia)</div>
+                            <div class="muted">Empresa: Retail Nova · Zona: Central</div>
+                        </div>
+                        <div class="text-end">
+                            <span class="status"><span class="dot dot-red"></span>SLA 4h</span>
+                            <div class="mt-2 fw-bold">₡ 70.000</div>
+                            <div class="muted" style="font-size:.9rem;">Presupuesto</div>
+                        </div>
+                    </div>
+                    <hr style="border-color: rgba(255,255,255,.12);" />
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="chip"><i class="bi bi-clock me-1"></i>Hoy</span>
+                        <span class="chip"><i class="bi bi-diagram-3 me-1"></i>Networking</span>
+                        <span class="chip"><i class="bi bi-router me-1"></i>Router/Switch</span>
+                    </div>
+                    <div class="d-flex gap-2 mt-3">
+                        <button class="btn btn-ghost"><i class="bi bi-eye me-1"></i>Ver detalles</button>
+                        <button class="btn btn-brand ms-auto"><i class="bi bi-send me-1"></i>Aplicar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel derecho: filtros extra + “detalle demo” -->
+    <div class="col-12 col-lg-5">
+        <div class="glass p-3 p-md-4 mb-3">
+            <h5 class="fw-bold mb-2">Tu match</h5>
+            <div class="muted mb-3">Mejora tu perfil para aparecer primero.</div>
+
+            <div class="d-grid gap-2">
+                <div class="kpi">
+                    <div class="label">Perfil completo</div>
+                    <div class="value">72%</div>
+                    <div class="muted">Agrega habilidades y tarifa.</div>
+                </div>
+                <button class="btn btn-brand"><i class="bi bi-person-lines-fill me-1"></i>Completar perfil</button>
+                <button class="btn btn-ghost"><i class="bi bi-bell me-1"></i>Alertas por habilidad</button>
+            </div>
+        </div>
+
+        <div class="glass p-3 p-md-4">
+            <h5 class="fw-bold mb-2">Detalle (preview)</h5>
+            <div class="muted mb-3">Cuando elijas una solicitud, aquí ves todo.</div>
+
+            <div class="p-3 rounded-4" style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.10);">
+                <div class="fw-bold">Instalación de CCTV (8 cámaras)</div>
+                <div class="muted">Seguridad Delta · Central</div>
+
+                <hr style="border-color: rgba(255,255,255,.12);" />
+
+                <div class="muted">Requisitos</div>
+                <ul class="mb-3">
+                    <li>Canalización y fijación</li>
+                    <li>Configuración NVR</li>
+                    <li>Acceso remoto</li>
+                </ul>
+
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="chip">Herramientas propias</span>
+                    <span class="chip">1 día</span>
+                    <span class="chip">Pago contra entrega</span>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-ghost w-100"><i class="bi bi-chat-dots me-1"></i>Preguntar</button>
+                    <button class="btn btn-brand w-100"><i class="bi bi-send me-1"></i>Aplicar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,185 @@
+﻿@{
+    ViewData["Title"] = "Mi perfil";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <h2 class="mb-1 fw-bold">Mi perfil</h2>
+        <div class="muted">Configura tu disponibilidad, habilidades y tarifas como técnico freelance.</div>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-ghost px-3"><i class="bi bi-eye me-1"></i>Vista pública</button>
+        <button class="btn btn-brand px-3"><i class="bi bi-check2-circle me-1"></i>Guardar cambios</button>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Left: tarjeta perfil -->
+    <div class="col-12 col-lg-4">
+        <div class="glass p-3 p-md-4">
+            <div class="d-flex align-items-center gap-3">
+                <div class="brand-badge" style="width:56px;height:56px;border-radius:18px;">
+                    <i class="bi bi-person-badge fs-4"></i>
+                </div>
+                <div>
+                    <div class="fw-bold fs-4">Técnico Freelance</div>
+                    <div class="muted">Zona Central · Disponible</div>
+                </div>
+            </div>
+
+            <hr style="border-color: rgba(255,255,255,.12);" />
+
+            <div class="d-flex flex-wrap gap-2">
+                <span class="chip"><i class="bi bi-star-fill me-1"></i>4.8</span>
+                <span class="chip"><i class="bi bi-briefcase me-1"></i>32 trabajos</span>
+                <span class="chip"><i class="bi bi-shield-check me-1"></i>Verificado</span>
+            </div>
+
+            <div class="mt-3">
+                <label class="form-label">Disponibilidad</label>
+                <select class="form-select">
+                    <option selected>Disponible hoy</option>
+                    <option>Disponible mañana</option>
+                    <option>No disponible</option>
+                </select>
+            </div>
+
+            <div class="mt-3">
+                <label class="form-label">Zona de cobertura</label>
+                <select class="form-select">
+                    <option selected>Central</option>
+                    <option>Occidente</option>
+                    <option>Caribe</option>
+                    <option>Pacífico</option>
+                </select>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+                <button class="btn btn-ghost"><i class="bi bi-geo-alt me-1"></i>Actualizar ubicación</button>
+                <button class="btn btn-ghost"><i class="bi bi-file-earmark-arrow-up me-1"></i>Subir documentos</button>
+                <button class="btn btn-ghost"><i class="bi bi-lock me-1"></i>Cambiar contraseña</button>
+            </div>
+        </div>
+
+        <div class="glass p-3 p-md-4 mt-3">
+            <h5 class="fw-bold mb-2">Tarifa</h5>
+            <div class="muted mb-3">Define cómo cobras para solicitudes.</div>
+
+            <label class="form-label">Cobro por hora</label>
+            <div class="input-group">
+                <span class="input-group-text" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);color:#fff;border-radius:14px 0 0 14px;">₡</span>
+                <input class="form-control" value="12000" />
+                <span class="input-group-text" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);color:#fff;border-radius:0 14px 14px 0;">/hora</span>
+            </div>
+
+            <div class="mt-3">
+                <label class="form-label">Visita / diagnóstico</label>
+                <div class="input-group">
+                    <span class="input-group-text" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);color:#fff;border-radius:14px 0 0 14px;">₡</span>
+                    <input class="form-control" value="8000" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: formulario completo -->
+    <div class="col-12 col-lg-8">
+        <div class="glass p-3 p-md-4">
+            <h4 class="fw-bold mb-1">Información</h4>
+            <div class="muted mb-3">Tu perfil es lo que ven las empresas en el marketplace.</div>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Nombre</label>
+                    <input class="form-control" placeholder="Ej. Juan" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Apellidos</label>
+                    <input class="form-control" placeholder="Ej. Pérez" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Correo</label>
+                    <input class="form-control" placeholder="ej. tecnico@correo.com" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Teléfono</label>
+                    <input class="form-control" placeholder="+506 8888-8888" />
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">Bio corta</label>
+                    <textarea class="form-control" rows="4" placeholder="Describe tu experiencia, certificaciones y tipo de trabajos que aceptas..."></textarea>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">Habilidades (tags)</label>
+                    <input class="form-control" placeholder="Ej: Electricidad, Redes, CCTV, Refrigeración, PLC..." />
+                    <div class="muted mt-2">Tip: separa por coma para buscabilidad.</div>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Años de experiencia</label>
+                    <select class="form-select">
+                        <option>0-1</option>
+                        <option>2-3</option>
+                        <option selected>4-6</option>
+                        <option>7+</option>
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Modalidad</label>
+                    <select class="form-select">
+                        <option selected>Presencial</option>
+                        <option>Remoto</option>
+                        <option>Mixto</option>
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">Portafolio / enlaces</label>
+                    <input class="form-control" placeholder="Link de Google Drive, GitHub, sitio, etc." />
+                </div>
+            </div>
+        </div>
+
+        <div class="glass p-3 p-md-4 mt-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="fw-bold mb-0">Preferencias de trabajo</h5>
+                <span class="chip"><i class="bi bi-sliders me-1"></i>Matching</span>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Distancia máxima</label>
+                    <select class="form-select">
+                        <option>5 km</option>
+                        <option selected>15 km</option>
+                        <option>30 km</option>
+                        <option>Sin límite</option>
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Urgencias</label>
+                    <select class="form-select">
+                        <option selected>Acepto urgencias</option>
+                        <option>No acepto urgencias</option>
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="wknd">
+                        <label class="form-check-label muted" for="wknd">Acepto trabajos en fin de semana</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-4">
+                <button class="btn btn-ghost px-3"><i class="bi bi-arrow-clockwise me-1"></i>Restablecer</button>
+                <button class="btn btn-brand px-3 ms-auto"><i class="bi bi-check2-circle me-1"></i>Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>

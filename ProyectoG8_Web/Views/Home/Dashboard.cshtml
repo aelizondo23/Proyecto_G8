@@ -1,0 +1,143 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <h2 class="mb-1 fw-bold">Mis órdenes asignadas</h2>
+        <div class="muted">Resumen de tu día: pendientes, en curso y cerradas.</div>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-ghost px-3"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+        <button class="btn btn-brand px-3"><i class="bi bi-plus-circle me-1"></i>Nueva nota</button>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-12 col-md-4">
+        <div class="kpi glass">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="label">Pendientes</div>
+                    <div class="value">5</div>
+                </div>
+                <i class="bi bi-hourglass-split fs-2 muted"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="kpi glass">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="label">En curso</div>
+                    <div class="value">2</div>
+                </div>
+                <i class="bi bi-activity fs-2 muted"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="kpi glass">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="label">Cerradas (hoy)</div>
+                    <div class="value">3</div>
+                </div>
+                <i class="bi bi-check2-circle fs-2 muted"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-8">
+        <div class="glass p-3 p-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="mb-0 fw-bold card-title">Órdenes de trabajo</h5>
+                <span class="chip"><i class="bi bi-lightning-charge me-1"></i>Prioridad por SLA</span>
+            </div>
+            <div class="table-responsive mt-3">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Cliente</th>
+                            <th>Tipo</th>
+                            <th>Estado</th>
+                            <th>ETA</th>
+                            <th class="text-end">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold">OT-1048</td>
+                            <td>Residencial La Paz</td>
+                            <td>Reparación</td>
+                            <td><span class="status"><span class="dot dot-warn"></span>Pendiente</span></td>
+                            <td class="muted">09:30</td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-ghost" href="#"><i class="bi bi-map me-1"></i>Ruta</a>
+                                <a class="btn btn-sm btn-brand ms-2" href="#"><i class="bi bi-play-circle me-1"></i>Iniciar</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">OT-1053</td>
+                            <td>Comercial El Faro</td>
+                            <td>Instalación</td>
+                            <td><span class="status"><span class="dot dot-green"></span>En curso</span></td>
+                            <td class="muted">11:10</td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-ghost" href="#"><i class="bi bi-clipboard-check me-1"></i>Checklist</a>
+                                <a class="btn btn-sm btn-brand ms-2" href="#"><i class="bi bi-check2 me-1"></i>Cerrar</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">OT-1060</td>
+                            <td>Condominio Los Pinos</td>
+                            <td>Mantenimiento</td>
+                            <td><span class="status"><span class="dot dot-red"></span>Atrasada</span></td>
+                            <td class="muted">13:00</td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-ghost" href="#"><i class="bi bi-telephone me-1"></i>Llamar</a>
+                                <a class="btn btn-sm btn-brand ms-2" href="#"><i class="bi bi-exclamation-circle me-1"></i>Escalar</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mt-2">
+                <span class="muted">Tip: inicia una orden para registrar hora de llegada automáticamente.</span>
+                <button class="btn btn-ghost btn-sm px-3"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+        <div class="glass p-3 p-md-4 mb-3">
+            <h5 class="fw-bold card-title mb-2">Mi ruta de hoy</h5>
+            <div class="muted mb-3">Vista rápida (demo)</div>
+            <div class="p-3 rounded-4" style="background: rgba(255,255,255,.05); border: 1px dashed rgba(255,255,255,.14);">
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="fw-semibold"><i class="bi bi-geo-alt me-1"></i>3 paradas</span>
+                    <span class="chip"><i class="bi bi-clock me-1"></i>~ 2h 15m</span>
+                </div>
+                <hr style="border-color: rgba(255,255,255,.12);" />
+                <ol class="mb-0 muted">
+                    <li>Residencial La Paz</li>
+                    <li>Comercial El Faro</li>
+                    <li>Condominio Los Pinos</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="glass p-3 p-md-4">
+            <h5 class="fw-bold card-title mb-2">Accesos rápidos</h5>
+            <div class="d-grid gap-2 mt-3">
+                <button class="btn btn-ghost"><i class="bi bi-camera me-1"></i>Subir evidencia</button>
+                <button class="btn btn-ghost"><i class="bi bi-file-earmark-text me-1"></i>Ver historial</button>
+                <button class="btn btn-brand"><i class="bi bi-chat-dots me-1"></i>Soporte</button>
+            </div>
+        </div>
+    </div>
+</div>
