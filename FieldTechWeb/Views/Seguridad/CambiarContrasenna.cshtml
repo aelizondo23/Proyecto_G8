@@ -19,14 +19,21 @@
 }
 
 <div class="glass p-3 p-md-4" style="max-width:480px;">
-    <form method="post" asp-controller="Seguridad" asp-action="CambiarContrasenna">
+    <form id="formCambiarContrasenna" method="post"
+          asp-controller="Seguridad" asp-action="CambiarContrasenna">
         <div class="mb-3">
             <label class="form-label">Nueva contraseña</label>
-            <input asp-for="NuevaContrasenna" type="password" class="form-control" placeholder="••••••••" />
+            <input asp-for="NuevaContrasenna" type="password" class="form-control"
+                   placeholder="Mínimo 8 caracteres" />
+            <span asp-validation-for="NuevaContrasenna"
+                  class="text-danger" style="font-size:.82rem;"></span>
         </div>
         <div class="mb-3">
             <label class="form-label">Confirmar contraseña</label>
-            <input asp-for="ConfirmarContrasenna" type="password" class="form-control" placeholder="••••••••" />
+            <input asp-for="ConfirmarContrasenna" type="password" class="form-control"
+                   placeholder="Repite la contraseña" />
+            <span asp-validation-for="ConfirmarContrasenna"
+                  class="text-danger" style="font-size:.82rem;"></span>
         </div>
         <div class="d-flex gap-2 mt-4">
             <a class="btn btn-ghost" asp-controller="Seguridad" asp-action="Perfil">Cancelar</a>
@@ -36,3 +43,7 @@
         </div>
     </form>
 </div>
+
+@section Scripts {
+    <script src="~/js/CambiarContrasenna.js" asp-append-version="true"></script>
+}

@@ -87,4 +87,19 @@ namespace FieldTechWeb.Models
         public List<CheckIn> CheckIns { get; set; } = new();
         public List<Mensaje> Mensajes { get; set; } = new();
     }
+
+    public class RegistroUsuario
+    {
+        public string Nombre { get; set; } = string.Empty;
+        public string Apellido { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Contrasenna { get; set; } = string.Empty;
+        public string ConfirmarContrasenna { get; set; } = string.Empty;
+        public int TipoUsuario { get; set; }   // 0 = TECH, 1 = CLIENT
+    }
+
+    public class RecuperarAccesoViewModel
+    {
+        public string Email { get; set; } = string.Empty;
+    }
 }

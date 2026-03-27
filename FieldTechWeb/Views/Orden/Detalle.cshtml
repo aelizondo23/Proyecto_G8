@@ -1,12 +1,12 @@
 @model FieldTechWeb.Models.DetalleOrdenViewModel
 @{
     ViewData["Title"] = "OT-" + Model.Orden.WorkOrderId;
-    var o            = Model.Orden;
-    var tipoUsuario  = Context.Session.GetString("TipoUsuario");
-    var userId       = Context.Session.GetInt32("UserId");
-    var dotS         = o.Status == "OPEN" ? "dot-green" : o.Status == "IN_PROGRESS" ? "dot-warn" : o.Status == "COMPLETED" ? "dot-muted" : "dot-red";
-    var dotU         = o.Urgency == "HIGH" ? "dot-red" : o.Urgency == "NORMAL" ? "dot-warn" : "dot-muted";
-    var miAsignacion = Model.Asignaciones.FirstOrDefault(a => a.TechnicianUserId == userId);
+    var o              = Model.Orden;
+    var tipoUsuario    = Context.Session.GetString("TipoUsuario");
+    var userId         = Context.Session.GetInt32("UserId");
+    var dotS           = o.Status == "OPEN" ? "dot-green" : o.Status == "IN_PROGRESS" ? "dot-warn" : o.Status == "COMPLETED" ? "dot-muted" : "dot-red";
+    var dotU           = o.Urgency == "HIGH" ? "dot-red" : o.Urgency == "NORMAL" ? "dot-warn" : "dot-muted";
+    var miAsignacion   = Model.Asignaciones.FirstOrDefault(a => a.TechnicianUserId == userId);
     var checkInAbierto = Model.CheckIns.FirstOrDefault(c => c.CheckOutAt == null);
 }
 
@@ -91,8 +91,7 @@
         <div class="glass p-3 p-md-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold mb-0 card-title"><i class="bi bi-geo-alt me-2"></i>Check-ins</h5>
-
-                @if (o.Status == "IN_PROGRESS")
+                @if (o.Status == "IN_PROGRESS" && tipoUsuario == "TECH")
                 {
                     if (checkInAbierto == null)
                     {
@@ -106,8 +105,8 @@
                     else
                     {
                         <form method="post" asp-controller="Orden" asp-action="CheckOut">
-                            <input type="hidden" name="ordenId"    value="@o.WorkOrderId" />
-                            <input type="hidden" name="checkInId"  value="@checkInAbierto.CheckInId" />
+                            <input type="hidden" name="ordenId"   value="@o.WorkOrderId" />
+                            <input type="hidden" name="checkInId" value="@checkInAbierto.CheckInId" />
                             <button type="submit" class="btn btn-ghost btn-sm">
                                 <i class="bi bi-box-arrow-right me-1"></i>Check-out
                             </button>
@@ -115,7 +114,6 @@
                     }
                 }
             </div>
-
             @if (!Model.CheckIns.Any())
             {
                 <div class="muted text-center py-3" style="font-size:.9rem;">Sin registros de check-in.</div>
@@ -126,10 +124,7 @@
                     <table class="table align-middle">
                         <thead>
                             <tr>
-                                <th>Técnico</th>
-                                <th>Entrada</th>
-                                <th>Salida</th>
-                                <th>Duración</th>
+                                <th>Técnico</th><th>Entrada</th><th>Salida</th><th>Duración</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -163,24 +158,71 @@
             <h5 class="fw-bold mb-3 card-title">Acciones</h5>
             <div class="d-grid gap-2">
 
-                @if (tipoUsuario == "CLIENT" && o.Status == "OPEN")
+                @* ── CLIENTE ── *@
+                @if (tipoUsuario == "CLIENT")
                 {
-                    <form method="post" asp-controller="Orden" asp-action="CancelarOrden"
-                          asp-route-id="@o.WorkOrderId"
-                          onsubmit="return confirm('¿Cancelar esta orden?')">
-                        <button type="submit" class="btn btn-danger-ghost w-100">
-                            <i class="bi bi-x-circle me-1"></i>Cancelar orden
-                        </button>
-                    </form>
+                    @if (o.Status == "OPEN")
+                    {
+                        <form method="post" asp-controller="Orden" asp-action="CancelarOrden"
+                              asp-route-id="@o.WorkOrderId"
+                              onsubmit="return confirm('¿Cancelar esta orden?')">
+                            <button type="submit" class="btn btn-danger-ghost w-100">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar orden
+                            </button>
+                        </form>
+                    }
+
+                    @* ── Panel: asignar técnico (solo OPEN y con técnicos aplicados) ── *@
+                    @if (o.Status == "OPEN" && Model.Asignaciones.Any())
+                    {
+                        <hr style="border-color:rgba(255,255,255,.10);" />
+                        <div class="muted mb-2" style="font-size:.85rem;">
+                            <i class="bi bi-person-check me-1"></i>Asignar técnico directamente
+                        </div>
+                        <form method="post" asp-controller="Orden" asp-action="AsignarTecnico"
+                              id="formAsignar">
+                            <input type="hidden" name="ordenId" value="@o.WorkOrderId" />
+                            <div class="mb-2">
+                                <select name="tecnicoId" class="form-select" required>
+                                    <option value="">Seleccionar técnico…</option>
+                                    @foreach (var a in Model.Asignaciones.Where(a => a.Status != "CANCELLED"))
+                                    {
+                                        <option value="@a.TechnicianUserId">
+                                            @a.TechnicianName
+                                            @(a.Zone != null ? $" · {a.Zone}" : "")
+                                            @(a.HourlyRate.HasValue ? $" · ₡{a.HourlyRate:N0}/h" : "")
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <input type="number" name="montoAcordado" class="form-control"
+                                       placeholder="Monto acordado (₡) — opcional" min="0" />
+                            </div>
+                            <button type="submit" class="btn btn-brand w-100">
+                                <i class="bi bi-person-fill-check me-1"></i>Asignar técnico
+                            </button>
+                        </form>
+                    }
+                    else if (o.Status == "OPEN")
+                    {
+                        <div class="muted text-center py-2" style="font-size:.88rem;">
+                            <i class="bi bi-hourglass me-1"></i>Aún no hay técnicos aplicados.
+                        </div>
+                    }
                 }
 
+                @* ── TÉCNICO ── *@
                 @if (tipoUsuario == "TECH")
                 {
                     @if (miAsignacion == null && o.Status == "OPEN")
                     {
-                        <p class="muted text-center mb-0" style="font-size:.9rem;">
-                            Escríbele al cliente para que te asigne a esta orden.
-                        </p>
+                        <form method="post" asp-controller="Orden" asp-action="AplicarOrden">
+                            <input type="hidden" name="ordenId" value="@o.WorkOrderId" />
+                            <button type="submit" class="btn btn-brand w-100">
+                                <i class="bi bi-send me-1"></i>Aplicar a esta orden
+                            </button>
+                        </form>
                     }
                     else if (miAsignacion?.Status == "PENDING")
                     {
@@ -212,14 +254,22 @@
                             </button>
                         </form>
                     }
+                    else if (miAsignacion?.Status == "COMPLETED")
+                    {
+                        <div class="text-center py-2">
+                            <span class="status"><span class="dot dot-muted"></span>Orden completada</span>
+                        </div>
+                    }
                 }
+
             </div>
         </div>
 
-        <!-- Asignaciones -->
+        <!-- Técnicos asignados -->
         <div class="glass p-3 p-md-4">
-            <h5 class="fw-bold mb-3 card-title"><i class="bi bi-person-badge me-2"></i>Técnicos asignados</h5>
-
+            <h5 class="fw-bold mb-3 card-title">
+                <i class="bi bi-person-badge me-2"></i>Técnicos asignados
+            </h5>
             @if (!Model.Asignaciones.Any())
             {
                 <div class="muted text-center py-3" style="font-size:.9rem;">Sin asignaciones aún.</div>
@@ -228,17 +278,37 @@
             {
                 @foreach (var a in Model.Asignaciones)
                 {
-                    var adot = a.Status == "ACCEPTED" ? "dot-green" : a.Status == "PENDING" ? "dot-warn" : a.Status == "COMPLETED" ? "dot-muted" : "dot-red";
-                    <div class="p-2 rounded-3 mb-2" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
+                    var adot = a.Status == "ACCEPTED" ? "dot-green"
+                             : a.Status == "PENDING"   ? "dot-warn"
+                             : a.Status == "COMPLETED" ? "dot-muted" : "dot-red";
+                    <div class="p-2 rounded-3 mb-2"
+                         style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="fw-semibold">@a.TechnicianName</div>
                             <span class="status"><span class="dot @adot"></span>@a.Status</span>
                         </div>
                         <div class="muted mt-1" style="font-size:.82rem;">
-                            Zona: @a.Zone · ₡@a.HourlyRate?.ToString("N0")/h
+                            @(a.Zone != null ? $"Zona: {a.Zone}" : "")
+                            @(a.HourlyRate.HasValue ? $" · ₡{a.HourlyRate:N0}/h" : "")
                             @if (a.AgreedAmount.HasValue)
-                            { <span>· Acordado: ₡@a.AgreedAmount.Value.ToString("N0")</span> }
+                            {
+                                <span> · Acordado: ₡@a.AgreedAmount.Value.ToString("N0")</span>
+                            }
                         </div>
+
+                        @* El cliente puede asignar directamente desde la tarjeta si la orden está OPEN *@
+                        @if (tipoUsuario == "CLIENT" && o.Status == "OPEN"
+                             && a.Status != "ACCEPTED" && a.Status != "CANCELLED")
+                        {
+                            <form method="post" asp-controller="Orden" asp-action="AsignarTecnico"
+                                  class="mt-2">
+                                <input type="hidden" name="ordenId"   value="@o.WorkOrderId" />
+                                <input type="hidden" name="tecnicoId" value="@a.TechnicianUserId" />
+                                <button type="submit" class="btn btn-brand btn-sm w-100">
+                                    <i class="bi bi-person-fill-check me-1"></i>Asignar
+                                </button>
+                            </form>
+                        }
                     </div>
                 }
             }

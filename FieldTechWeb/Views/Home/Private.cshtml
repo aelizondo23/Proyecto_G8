@@ -1,0 +1,14 @@
+@{
+    ViewData["Title"] = "Área privada";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="glass p-4">
+    <h2>Área privada</h2>
+    <p class="muted">Bienvenido, @ViewBag.NombreUsuario</p>
+    <p class="muted">Esta sección está disponible solo para usuarios autenticados. Aquí puedes ver información restringida y enlaces privados.</p>
+    <ul>
+        <li><a asp-controller="Orden" asp-action="Dashboard">Ir al dashboard</a></li>
+        <li><a asp-controller="Seguridad" asp-action="Perfil">Mi perfil</a></li>
+    </ul>
+</div>

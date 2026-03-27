@@ -78,6 +78,23 @@
                         </a>
                     </div>
                 }
+                else
+                {
+                    <ul class="navbar-nav ms-auto gap-2">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">Inicio</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="About">Acerca</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-ghost btn-sm" asp-controller="Home" asp-action="Login">Iniciar sesión</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-brand btn-sm" asp-controller="Home" asp-action="Registro">Crear cuenta</a>
+                        </li>
+                    </ul>
+                }
             </div>
         </div>
     </nav>
@@ -93,6 +110,8 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
     @RenderSection("Scripts", required: false)
 </body>
 </html>

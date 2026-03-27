@@ -3,20 +3,105 @@
     Layout = "~/Views/Shared/_LayoutExterno.cshtml";
 }
 
-<div class="auth-shell">
-    <div class="glass p-3 p-md-4 auth-card text-center">
-        <div class="brand-badge mx-auto mb-3" style="width:56px;height:56px;border-radius:18px;">
-            <i class="bi bi-tools fs-4"></i>
+<section class="page-wrap">
+    <div class="glass p-4 p-md-5 hero">
+        <div>
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="brand-badge">
+                    <i class="bi bi-tools"></i>
+                </div>
+                <div>
+                    <h1 class="mb-0">FieldTech</h1>
+                    <small class="muted">Soluciones rápidas para órdenes de campo</small>
+                </div>
+            </div>
+
+            <h2 class="fw-bold">Conecta técnicos certificados con clientes en minutos</h2>
+            <p class="lead muted">Gestiona órdenes, rutas y comunicaciones desde una sola plataforma. Ahorra tiempo y mejora la experiencia de tus clientes con técnicos verificados y seguimiento en tiempo real.</p>
+
+            <div class="d-flex gap-2 flex-wrap mb-3 align-items-center">
+                <a class="btn btn-brand btn-lg" asp-controller="Home" asp-action="Login">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión
+                </a>
+                <a class="btn btn-ghost btn-lg" asp-controller="Home" asp-action="Registro">
+                    <i class="bi bi-person-plus me-1"></i>Crear cuenta
+                </a>
+
+                <a class="ms-3 text-white" title="Ir a iniciar sesión" asp-controller="Home" asp-action="Login" style="font-size:1.1rem;">
+                    <i class="bi bi-person-circle"></i>
+                </a>
+            </div>
+
+            <div class="feature-grid">
+                <div class="feature">
+                    <div class="d-flex align-items-start gap-3">
+                        <span class="brand-badge" style="width:44px;height:44px;border-radius:10px;"><i class="bi bi-speedometer2"></i></span>
+                        <div>
+                            <div class="card-title">Dashboard central</div>
+                            <div class="muted" style="font-size:.92rem">Visión rápida de órdenes, estado y rendimiento del equipo.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="feature">
+                    <div class="d-flex align-items-start gap-3">
+                        <span class="brand-badge" style="width:44px;height:44px;border-radius:10px;"><i class="bi bi-geo-alt"></i></span>
+                        <div>
+                            <div class="card-title">Rutas y ubicación</div>
+                            <div class="muted" style="font-size:.92rem">Optimiza desplazamientos y asigna la orden más cercana al técnico disponible.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="feature">
+                    <div class="d-flex align-items-start gap-3">
+                        <span class="brand-badge" style="width:44px;height:44px;border-radius:10px;"><i class="bi bi-shield-check"></i></span>
+                        <div>
+                            <div class="card-title">Técnicos verificados</div>
+                            <div class="muted" style="font-size:.92rem">Perfiles revisados, calificaciones y comunicación segura con el cliente.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <h2 class="fw-bold mb-1">FieldTech</h2>
-        <p class="muted mb-4">Plataforma de técnicos freelance para órdenes de campo.</p>
-        <div class="d-grid gap-2">
-            <a class="btn btn-brand btn-lg" asp-controller="Home" asp-action="Login">
-                <i class="bi bi-lightning-charge me-1"></i>Iniciar sesión
-            </a>
-            <a class="btn btn-ghost" asp-controller="Home" asp-action="Registro">
-                Crear cuenta
-            </a>
+
+        <div class="hero-illustration text-center">
+            <!-- Simple illustrative SVG -->
+            <svg width="100%" height="100%" viewBox="0 0 520 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="0" y="0" width="520" height="360" rx="18" fill="url(#g)" opacity="0.08" />
+                <defs>
+                    <linearGradient id="g" x1="0" x2="1">
+                        <stop offset="0" stop-color="#7c3aed" />
+                        <stop offset="1" stop-color="#22c55e" />
+                    </linearGradient>
+                </defs>
+                <g transform="translate(40,40)">
+                    <circle cx="180" cy="80" r="52" fill="#fff" opacity="0.06" />
+                    <g transform="translate(140,40)">
+                        <path d="M12 2v8" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.95" />
+                        <path d="M2 14l4-4 4 4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+                    </g>
+                    <rect x="40" y="140" width="260" height="120" rx="10" fill="#fff" opacity="0.04" />
+                </g>
+            </svg>
         </div>
     </div>
-</div>
+
+    <div class="mt-4">
+        <div class="glass p-3 p-md-4">
+            <h4 class="mb-3">Cómo funciona</h4>
+            <div class="row">
+                <div class="col-md-4">
+                    <h6 class="fw-bold">1. Publica tu orden</h6>
+                    <p class="muted">Describe el servicio y requisitos. Nosotros conectamos con técnicos disponibles.</p>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="fw-bold">2. Confirma al técnico</h6>
+                    <p class="muted">Revisa perfiles, propuestas y selecciona al más adecuado.</p>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="fw-bold">3. Seguimiento en ruta</h6>
+                    <p class="muted">Monitorea el progreso, califica el servicio y gestiona pagos.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

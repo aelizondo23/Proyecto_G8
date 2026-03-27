@@ -1,8 +1,9 @@
-using FieldTechWeb.Filters;
 using FieldTechWeb.Models;
 using FieldTechWeb.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
+using Microsoft.AspNetCore.Http;
+using FieldTechWeb.Filters;
 
 namespace FieldTechWeb.Controllers
 {
@@ -14,10 +15,27 @@ namespace FieldTechWeb.Controllers
             var nombre = HttpContext.Session.GetString("NombreUsuario");
             if (!string.IsNullOrEmpty(nombre))
                 return RedirectToAction("Dashboard", "Orden");
-            return RedirectToAction("Login", "Home");
+            return View("Index");
         }
 
-        #region Login
+        [HttpGet]
+        public IActionResult About()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        public IActionResult Private()
+        {
+            var nombre = HttpContext.Session.GetString("NombreUsuario");
+            if (string.IsNullOrEmpty(nombre))
+                return RedirectToAction("Login", "Home");
+
+            ViewBag.NombreUsuario = nombre;
+            return View();
+        }
+
+        #region Iniciar Sesión
 
         [HttpGet]
         public IActionResult Login()
@@ -54,7 +72,7 @@ namespace FieldTechWeb.Controllers
 
         #endregion
 
-        #region Registro
+        #region Registrar Cuenta
 
         [HttpGet]
         public IActionResult Registro()
@@ -63,8 +81,14 @@ namespace FieldTechWeb.Controllers
         }
 
         [HttpPost]
-        public IActionResult Registro(Usuario modelo)
+        public IActionResult Registro(RegistroUsuario modelo)
         {
+            if (modelo.Contrasenna != modelo.ConfirmarContrasenna)
+            {
+                ViewBag.Mensaje = "Las contraseñas no coinciden.";
+                return View(modelo);
+            }
+
             modelo.Contrasenna = _util.Encrypt(modelo.Contrasenna);
 
             using var client = _http.CreateClient();
@@ -81,7 +105,38 @@ namespace FieldTechWeb.Controllers
             }
 
             ViewBag.Mensaje = result.Content.ReadAsStringAsync().Result;
+            return View(modelo);
+        }
+
+        #endregion
+
+        #region Recuperar Acceso
+
+        [HttpGet]
+        public IActionResult RecuperarAcceso()
+        {
             return View();
+        }
+
+        [HttpPost]
+        public IActionResult RecuperarAcceso(RecuperarAccesoViewModel modelo)
+        {
+            using var client = _http.CreateClient();
+            var url = _config.GetValue<string>("Valores:UrlAPI") + "Home/RecuperarAcceso";
+            var result = client.PutAsJsonAsync(url, modelo).Result;
+
+            if (result.StatusCode == HttpStatusCode.OK)
+            {
+                ViewBag.Exito = "Se envió una contraseña temporal a su correo electrónico.";
+                return View();
+            }
+            else if (result.StatusCode == HttpStatusCode.InternalServerError)
+            {
+                throw new Exception();
+            }
+
+            ViewBag.Mensaje = result.Content.ReadAsStringAsync().Result;
+            return View(modelo);
         }
 
         #endregion

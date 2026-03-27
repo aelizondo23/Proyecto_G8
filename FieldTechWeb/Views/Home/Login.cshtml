@@ -6,13 +6,15 @@
 
 <div class="auth-shell">
     <div class="glass p-3 p-md-4 auth-card">
+
         <div class="d-flex align-items-center gap-2 mb-2">
             <span class="brand-badge"><i class="bi bi-box-arrow-in-right"></i></span>
             <div>
                 <div class="fw-bold fs-4">Iniciar sesión</div>
-                <div class="muted">Accede como Técnico o como Empresa/Persona.</div>
+                <div class="muted">Accede como Técnico o como Empresa / Persona.</div>
             </div>
         </div>
+
         <hr style="border-color: rgba(255,255,255,.12);" />
 
         @if (ViewBag.Mensaje != null)
@@ -20,16 +22,26 @@
             <div class="alert alert-danger rounded-3 mb-3 py-2">@ViewBag.Mensaje</div>
         }
 
-        <form method="post" asp-controller="Home" asp-action="Login">
+        <form id="formLogin" method="post" asp-controller="Home" asp-action="Login">
             <div class="mb-3">
-                <label class="form-label">Correo</label>
-                <input asp-for="Email" type="email" class="form-control" placeholder="tu@correo.com" />
+                <label class="form-label">Correo electrónico</label>
+                <input asp-for="Email" type="email" class="form-control"
+                       placeholder="tu@correo.com" required />
             </div>
             <div class="mb-2">
                 <label class="form-label">Contraseña</label>
-                <input asp-for="Contrasenna" type="password" class="form-control" placeholder="••••••••" />
+                <input asp-for="Contrasenna" type="password" class="form-control"
+                       placeholder="••••••••" required />
             </div>
-            <div class="d-grid gap-2 mt-3">
+
+            <div class="text-end mb-3">
+                <a asp-controller="Home" asp-action="RecuperarAcceso"
+                   style="font-size:.88rem;color:rgba(255,255,255,.55);">
+                    ¿Olvidó su contraseña?
+                </a>
+            </div>
+
+            <div class="d-grid gap-2 mt-1">
                 <button type="submit" class="btn btn-brand btn-lg">
                     <i class="bi bi-lightning-charge me-1"></i>Entrar
                 </button>
@@ -38,5 +50,10 @@
                 </a>
             </div>
         </form>
+
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/Login.js" asp-append-version="true"></script>
+}

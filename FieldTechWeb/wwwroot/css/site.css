@@ -179,6 +179,18 @@ body {
     width: 100%;
 }
 
+/* Hero and features */
+.hero { display: grid; grid-template-columns: 1fr 360px; gap: 28px; align-items: center; }
+.hero-illustration { min-height: 220px; }
+.feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 18px; }
+.feature { padding: 10px; border-radius: 12px; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.03); }
+
+@media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; }
+    .feature-grid { grid-template-columns: 1fr; }
+    .hero-illustration { display: none; }
+}
+
 /* Forms */
 .form-control, .form-select {
     background: rgba(255,255,255,.06);
