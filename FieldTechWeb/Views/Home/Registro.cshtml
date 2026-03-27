@@ -1,0 +1,75 @@
+@model FieldTechWeb.Models.Usuario
+@{
+    ViewData["Title"] = "Crear cuenta";
+    Layout = "~/Views/Shared/_LayoutExterno.cshtml";
+}
+
+<div class="auth-shell">
+    <div class="glass p-3 p-md-4" style="max-width:620px;width:100%;">
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="brand-badge"><i class="bi bi-person-plus"></i></span>
+            <div>
+                <div class="fw-bold fs-4">Crear cuenta</div>
+                <div class="muted">Regístrate como Técnico o como Empresa/Persona.</div>
+            </div>
+        </div>
+        <hr style="border-color: rgba(255,255,255,.12);" />
+
+        @if (ViewBag.Mensaje != null)
+        {
+            <div class="alert alert-danger rounded-3 mb-3 py-2">@ViewBag.Mensaje</div>
+        }
+
+        <form method="post" asp-controller="Home" asp-action="Registro">
+            <div class="mb-3">
+                <label class="form-label">Tipo de cuenta</label>
+                <div class="row g-2">
+                    <div class="col-12 col-md-6">
+                        <input type="radio" class="btn-check" name="TipoUsuario" id="roleTech" value="0" checked />
+                        <label class="btn btn-ghost w-100 py-3" for="roleTech">
+                            <div class="fw-bold"><i class="bi bi-tools me-1"></i>Técnico</div>
+                            <div class="muted" style="font-size:.9rem;">Aplica a solicitudes y gestiona órdenes.</div>
+                        </label>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <input type="radio" class="btn-check" name="TipoUsuario" id="roleCliente" value="1" />
+                        <label class="btn btn-ghost w-100 py-3" for="roleCliente">
+                            <div class="fw-bold"><i class="bi bi-building me-1"></i>Empresa / Persona</div>
+                            <div class="muted" style="font-size:.9rem;">Publica solicitudes y contrata técnicos.</div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Nombre</label>
+                    <input asp-for="Nombre" class="form-control" placeholder="Ej. Juan" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Apellido</label>
+                    <input asp-for="Apellido" class="form-control" placeholder="Ej. Pérez" />
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Correo</label>
+                    <input asp-for="Email" type="email" class="form-control" placeholder="correo@dominio.com" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Contraseña</label>
+                    <input asp-for="Contrasenna" type="password" class="form-control" placeholder="••••••••" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Confirmar contraseña</label>
+                    <input type="password" class="form-control" placeholder="••••••••" />
+                </div>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-brand btn-lg">
+                    <i class="bi bi-check2-circle me-1"></i>Crear cuenta
+                </button>
+                <a class="btn btn-ghost" asp-controller="Home" asp-action="Login">Ya tengo cuenta</a>
+            </div>
+        </form>
+    </div>
+</div>

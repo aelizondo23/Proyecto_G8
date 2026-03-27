@@ -1,0 +1,22 @@
+@{
+    ViewData["Title"] = "Inicio";
+    Layout = "~/Views/Shared/_LayoutExterno.cshtml";
+}
+
+<div class="auth-shell">
+    <div class="glass p-3 p-md-4 auth-card text-center">
+        <div class="brand-badge mx-auto mb-3" style="width:56px;height:56px;border-radius:18px;">
+            <i class="bi bi-tools fs-4"></i>
+        </div>
+        <h2 class="fw-bold mb-1">FieldTech</h2>
+        <p class="muted mb-4">Plataforma de técnicos freelance para órdenes de campo.</p>
+        <div class="d-grid gap-2">
+            <a class="btn btn-brand btn-lg" asp-controller="Home" asp-action="Login">
+                <i class="bi bi-lightning-charge me-1"></i>Iniciar sesión
+            </a>
+            <a class="btn btn-ghost" asp-controller="Home" asp-action="Registro">
+                Crear cuenta
+            </a>
+        </div>
+    </div>
+</div>

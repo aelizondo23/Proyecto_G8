@@ -1,0 +1,128 @@
+@model List<FieldTechWeb.Models.Orden>
+@{
+    ViewData["Title"] = "Marketplace";
+    ViewData["Active"] = "Marketplace";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <h2 class="mb-1 fw-bold">Marketplace</h2>
+        <div class="muted">Solicitudes de empresas buscando técnico freelance.</div>
+    </div>
+    <form method="get" asp-controller="Orden" asp-action="Marketplace" class="d-flex flex-wrap gap-2">
+        <input name="categoria" class="form-control" style="max-width:220px;" placeholder="Buscar categoría..."
+               value="@Context.Request.Query["categoria"]" />
+        <select name="zona" class="form-select" style="max-width:160px;">
+            <option value="">Zona: Todas</option>
+            <option>Central</option>
+            <option>Occidente</option>
+            <option>Caribe</option>
+            <option>Pacífico</option>
+        </select>
+        <select name="urgencia" class="form-select" style="max-width:160px;">
+            <option value="">Urgencia: Todas</option>
+            <option value="HIGH" selected="@(Context.Request.Query["urgencia"] == "HIGH")">Alta</option>
+            <option value="NORMAL" selected="@(Context.Request.Query["urgencia"] == "NORMAL")">Normal</option>
+            <option value="LOW" selected="@(Context.Request.Query["urgencia"] == "LOW")">Baja</option>
+        </select>
+        <button type="submit" class="btn btn-brand px-3">
+            <i class="bi bi-funnel me-1"></i>Filtrar
+        </button>
+    </form>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-7">
+        <div class="glass p-3 p-md-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0">Solicitudes abiertas</h5>
+                <span class="chip">
+                    <i class="bi bi-lightning-charge me-1"></i>@Model.Count resultados
+                </span>
+            </div>
+
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5 muted">
+                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                    No hay órdenes con esos filtros.
+                </div>
+            }
+            else
+            {
+                <div class="mt-3 d-grid gap-3">
+                    @foreach (var o in Model)
+                    {
+                        var dotU = o.Urgency == "HIGH" ? "dot-red" : o.Urgency == "NORMAL" ? "dot-warn" : "dot-muted";
+                        var urgLabel = o.Urgency == "HIGH" ? "Urgente" : o.Urgency == "NORMAL" ? "Normal" : "Baja";
+
+                        <div class="p-3 rounded-4" style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.10);">
+                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                <div>
+                                    <div class="fw-bold fs-5">@o.Title</div>
+                                    <div class="muted">@(o.ClientDisplayName ?? o.ClientName) · @o.LocationText</div>
+                                </div>
+                                <div class="text-end flex-shrink-0">
+                                    <span class="status">
+                                        <span class="dot @dotU"></span>@urgLabel
+                                    </span>
+                                    <div class="mt-2 fw-bold">₡@o.BudgetAmount?.ToString("N0")</div>
+                                    <div class="muted" style="font-size:.9rem;">Presupuesto</div>
+                                </div>
+                            </div>
+
+                            <hr style="border-color: rgba(255,255,255,.12);" />
+
+                            <div class="d-flex flex-wrap gap-2">
+                                @if (!string.IsNullOrEmpty(o.Category))
+                                {
+                                    <span class="chip">
+                                        <i class="bi bi-gear me-1"></i>@o.Category
+                                    </span>
+                                }
+                                @if (o.CreatedAt.HasValue)
+                                {
+                                    <span class="chip">
+                                        <i class="bi bi-clock me-1"></i>@o.CreatedAt.Value.ToString("dd MMM")
+                                    </span>
+                                }
+                            </div>
+
+                       
+                            <div class="d-flex gap-2 mt-3">
+                                <a class="btn btn-ghost btn-sm"
+                                   asp-controller="Orden"
+                                   asp-action="Detalle"
+                                   asp-route-id="@o.WorkOrderId">
+                                    <i class="bi bi-eye me-1"></i>Ver detalles
+                                </a>
+
+                                <form method="post"
+                                      asp-controller="Orden"
+                                      asp-action="AplicarOrden"
+                                      class="ms-auto">
+                                    <input type="hidden" name="ordenId" value="@o.WorkOrderId" />
+                                    <button type="submit" class="btn btn-brand btn-sm">
+                                        <i class="bi bi-send me-1"></i>Aplicar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-5">
+        <div class="glass p-3 p-md-4">
+            <h5 class="fw-bold mb-2">Tu perfil</h5>
+            <div class="muted mb-3">Mantén tu perfil completo para aparecer primero.</div>
+            <div class="d-grid gap-2 mt-3">
+                <a class="btn btn-brand" asp-controller="Seguridad" asp-action="Perfil">
+                    <i class="bi bi-person-lines-fill me-1"></i>Ver mi perfil
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

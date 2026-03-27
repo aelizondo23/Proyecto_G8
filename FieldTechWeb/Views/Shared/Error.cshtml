@@ -1,0 +1,17 @@
+@{
+    ViewData["Title"] = "Error";
+    Layout = "~/Views/Shared/_LayoutExterno.cshtml";
+}
+
+<div class="auth-shell">
+    <div class="glass p-3 p-md-4 auth-card text-center">
+        <div class="brand-badge mx-auto mb-3" style="width:56px;height:56px;border-radius:18px;">
+            <i class="bi bi-exclamation-triangle fs-4"></i>
+        </div>
+        <h4 class="fw-bold mb-2">Ocurrió un error</h4>
+        <p class="muted">Se presentó un error inesperado. Por favor intenta nuevamente.</p>
+        <a class="btn btn-brand mt-2" asp-controller="Orden" asp-action="Dashboard">
+            <i class="bi bi-house me-1"></i>Volver al inicio
+        </a>
+    </div>
+</div>

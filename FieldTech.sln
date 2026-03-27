@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36915.13 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FieldTechApi", "FieldTechApi\FieldTechApi.csproj", "{CD8ABDFC-9C24-4EEA-8EAF-0DC15B724DD5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FieldTechWeb", "FieldTechWeb\FieldTechWeb.csproj", "{8B18DF3D-9E8E-40EC-9302-8CEB505C61E3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CD8ABDFC-9C24-4EEA-8EAF-0DC15B724DD5} = {CD8ABDFC-9C24-4EEA-8EAF-0DC15B724DD5}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CD8ABDFC-9C24-4EEA-8EAF-0DC15B724DD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD8ABDFC-9C24-4EEA-8EAF-0DC15B724DD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD8ABDFC-9C24-4EEA-8EAF-0DC15B724DD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD8ABDFC-9C24-4EEA-8EAF-0DC15B724DD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B18DF3D-9E8E-40EC-9302-8CEB505C61E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B18DF3D-9E8E-40EC-9302-8CEB505C61E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B18DF3D-9E8E-40EC-9302-8CEB505C61E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B18DF3D-9E8E-40EC-9302-8CEB505C61E3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F66892C9-E50D-43D3-A59D-56060A50AE25}
+	EndGlobalSection
+EndGlobal

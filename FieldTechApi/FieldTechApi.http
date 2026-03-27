@@ -1,0 +1,6 @@
+@FieldTechApi_HostAddress = http://localhost:5058
+
+GET {{FieldTechApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

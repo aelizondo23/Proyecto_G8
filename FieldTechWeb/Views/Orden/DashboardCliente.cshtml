@@ -1,0 +1,101 @@
+@model List<FieldTechWeb.Models.Orden>
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["Active"] = "Dashboard";
+    var abiertas    = Model.Count(o => o.Status == "OPEN");
+    var enProgreso  = Model.Count(o => o.Status == "IN_PROGRESS");
+    var completadas = Model.Count(o => o.Status == "COMPLETED");
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <h2 class="mb-1 fw-bold">Mis órdenes de trabajo</h2>
+        <div class="muted">Resumen general de tus órdenes publicadas.</div>
+    </div>
+    <a class="btn btn-brand px-3" asp-controller="Orden" asp-action="CrearOrden">
+        <i class="bi bi-plus-circle me-1"></i>Nueva orden
+    </a>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-12 col-md-4">
+        <div class="kpi glass">
+            <div class="d-flex align-items-center justify-content-between">
+                <div><div class="label">Abiertas</div><div class="value">@abiertas</div></div>
+                <i class="bi bi-hourglass-split fs-2 muted"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="kpi glass">
+            <div class="d-flex align-items-center justify-content-between">
+                <div><div class="label">En progreso</div><div class="value">@enProgreso</div></div>
+                <i class="bi bi-activity fs-2 muted"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="kpi glass">
+            <div class="d-flex align-items-center justify-content-between">
+                <div><div class="label">Completadas</div><div class="value">@completadas</div></div>
+                <i class="bi bi-check2-circle fs-2 muted"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="glass p-3 p-md-4">
+    <h5 class="fw-bold mb-3 card-title">Órdenes recientes</h5>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 muted">
+            <i class="bi bi-clipboard-x fs-1 d-block mb-2"></i>
+            No has publicado ninguna orden aún.
+            <a asp-controller="Orden" asp-action="CrearOrden" class="d-block mt-2">Crea tu primera orden</a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Título</th>
+                        <th>Categoría</th>
+                        <th>Presupuesto</th>
+                        <th>Urgencia</th>
+                        <th>Estado</th>
+                        <th class="text-end">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var o in Model.Take(10))
+                    {
+                        var dotU = o.Urgency == "HIGH" ? "dot-red" : o.Urgency == "NORMAL" ? "dot-warn" : "dot-muted";
+                        var dotS = o.Status == "OPEN" ? "dot-green" : o.Status == "IN_PROGRESS" ? "dot-warn" : o.Status == "COMPLETED" ? "dot-muted" : "dot-red";
+                        <tr>
+                            <td class="fw-bold muted">OT-@o.WorkOrderId</td>
+                            <td>@o.Title</td>
+                            <td><span class="chip">@o.Category</span></td>
+                            <td>₡@o.BudgetAmount?.ToString("N0")</td>
+                            <td><span class="status"><span class="dot @dotU"></span>@o.Urgency</span></td>
+                            <td><span class="status"><span class="dot @dotS"></span>@o.Status</span></td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-brand" asp-controller="Orden" asp-action="Detalle" asp-route-id="@o.WorkOrderId">
+                                    <i class="bi bi-eye me-1"></i>Ver
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-2">
+            <a class="btn btn-ghost btn-sm" asp-controller="Orden" asp-action="MisOrdenes">
+                Ver todas <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+    }
+</div>
