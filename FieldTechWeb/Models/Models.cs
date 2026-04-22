@@ -86,6 +86,9 @@ namespace FieldTechWeb.Models
         public List<Asignacion> Asignaciones { get; set; } = new();
         public List<CheckIn> CheckIns { get; set; } = new();
         public List<Mensaje> Mensajes { get; set; } = new();
+        public List<NotaOrden> Notas { get; set; } = new();
+        public List<HistorialOrden> Historial { get; set; } = new();
+        public List<EventoCalendario> Eventos { get; set; } = new();
     }
 
     public class RegistroUsuario
