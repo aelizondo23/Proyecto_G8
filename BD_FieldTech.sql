@@ -1002,3 +1002,238 @@ BEGIN
       AND IsActive = 1;
 END
 GO
+
+-- =========================================================
+-- TABLA: WorkOrderNote
+-- Esta tabla almacena las notas o comentarios asociados
+-- a una orden de trabajo.
+-- Cada nota pertenece a una orden específica y registra
+-- qué usuario la escribió, el contenido y la fecha.
+-- =========================================================
+CREATE TABLE [dbo].[WorkOrderNote] (
+    [NoteId]         INT IDENTITY(1,1) NOT NULL, -- Identificador único de la nota
+    [WorkOrderId]    INT               NOT NULL, -- Id de la orden de trabajo a la que pertenece la nota
+    [UserId]         INT               NOT NULL, -- Id del usuario que escribió la nota
+    [NoteText]       NVARCHAR(1000)    NOT NULL, -- Texto o contenido de la nota
+    [CreatedAt]      DATETIME2(7)      NOT NULL CONSTRAINT DF_WorkOrderNote_CreatedAt DEFAULT (SYSDATETIME()), -- Fecha y hora de creación automática
+    CONSTRAINT PK_WorkOrderNote PRIMARY KEY CLUSTERED ([NoteId] ASC), -- Llave primaria
+    CONSTRAINT FK_WorkOrderNote_Order FOREIGN KEY ([WorkOrderId]) REFERENCES [dbo].[WorkOrder]([WorkOrderId]), -- Relación con la orden de trabajo
+    CONSTRAINT FK_WorkOrderNote_User FOREIGN KEY ([UserId]) REFERENCES [dbo].[Users]([UserId]) -- Relación con el usuario autor de la nota
+);
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_AddWorkOrderNote
+-- Este procedimiento agrega una nueva nota a una orden de trabajo.
+-- Valida que el texto de la nota no esté vacío.
+-- Si la inserción se realiza correctamente, devuelve el Id de la nota creada.
+-- =========================================================
+CREATE PROCEDURE [dbo].[sp_AddWorkOrderNote]
+    @WorkOrderId INT,
+    @UserId INT,
+    @NoteText NVARCHAR(1000)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validación para evitar notas vacías o con solo espacios
+    IF LTRIM(RTRIM(ISNULL(@NoteText, ''))) = ''
+    BEGIN
+        RAISERROR('EMPTY_NOTE', 16, 1);
+        RETURN;
+    END
+
+    -- Inserta la nueva nota en la tabla
+    INSERT INTO WorkOrderNote(WorkOrderId, UserId, NoteText)
+    VALUES(@WorkOrderId, @UserId, @NoteText);
+
+    -- Devuelve el Id de la nota recién creada
+    SELECT SCOPE_IDENTITY() AS NoteId;
+END
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_GetWorkOrderNotes
+-- Este procedimiento obtiene todas las notas de una orden de trabajo.
+-- También muestra el nombre completo del autor de cada nota.
+-- Los resultados se ordenan de la más reciente a la más antigua.
+-- =========================================================
+CREATE PROCEDURE [dbo].[sp_GetWorkOrderNotes]
+    @WorkOrderId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        n.NoteId,
+        n.WorkOrderId,
+        n.UserId,
+        n.NoteText,
+        n.CreatedAt,
+        u.FirstName + ' ' + u.LastName AS AuthorName
+    FROM WorkOrderNote n
+    INNER JOIN Users u ON u.UserId = n.UserId
+    WHERE n.WorkOrderId = @WorkOrderId
+    ORDER BY n.CreatedAt DESC;
+END
+GO
+
+-- =========================================================
+-- TABLA: WorkOrderCalendarEvent
+-- Esta tabla almacena eventos de calendario relacionados
+-- con órdenes de trabajo o eventos creados manualmente por un usuario.
+-- Permite registrar título, fecha de inicio, fecha de fin
+-- y una descripción opcional.
+-- =========================================================
+CREATE TABLE [dbo].[WorkOrderCalendarEvent] (
+    [EventId]        INT IDENTITY(1,1) NOT NULL, -- Identificador único del evento
+    [WorkOrderId]    INT               NULL, -- Orden de trabajo asociada al evento (puede ser nulo)
+    [CreatedByUserId] INT              NOT NULL, -- Usuario que creó el evento
+    [Title]          NVARCHAR(150)     NOT NULL, -- Título del evento
+    [StartAt]        DATETIME2(7)      NOT NULL, -- Fecha y hora de inicio
+    [EndAt]          DATETIME2(7)      NOT NULL, -- Fecha y hora de finalización
+    [Description]    NVARCHAR(500)     NULL, -- Descripción opcional del evento
+    CONSTRAINT PK_WorkOrderCalendarEvent PRIMARY KEY CLUSTERED ([EventId] ASC), -- Llave primaria
+    CONSTRAINT FK_WorkOrderCalendarEvent_Order FOREIGN KEY ([WorkOrderId]) REFERENCES [dbo].[WorkOrder]([WorkOrderId]), -- Relación opcional con la orden
+    CONSTRAINT FK_WorkOrderCalendarEvent_User FOREIGN KEY ([CreatedByUserId]) REFERENCES [dbo].[Users]([UserId]) -- Relación con el usuario creador
+);
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_CreateCalendarEvent
+-- Este procedimiento crea un evento en el calendario.
+-- Puede estar asociado o no a una orden de trabajo.
+-- Valida que la fecha final sea mayor que la fecha inicial.
+-- Devuelve el Id del evento creado.
+-- =========================================================
+CREATE PROCEDURE [dbo].[sp_CreateCalendarEvent]
+    @WorkOrderId INT = NULL,
+    @CreatedByUserId INT,
+    @Title NVARCHAR(150),
+    @StartAt DATETIME2(7),
+    @EndAt DATETIME2(7),
+    @Description NVARCHAR(500) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validación del rango de fechas
+    IF @EndAt <= @StartAt
+    BEGIN
+        RAISERROR('INVALID_DATE_RANGE', 16, 1);
+        RETURN;
+    END
+
+    -- Inserta el evento en la tabla
+    INSERT INTO WorkOrderCalendarEvent(WorkOrderId, CreatedByUserId, Title, StartAt, EndAt, Description)
+    VALUES(@WorkOrderId, @CreatedByUserId, @Title, @StartAt, @EndAt, @Description);
+
+    -- Devuelve el Id del evento creado
+    SELECT SCOPE_IDENTITY() AS EventId;
+END
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_GetCalendarEvents
+-- Este procedimiento obtiene los eventos de calendario
+-- creados por un usuario dentro de un rango de fechas.
+-- Solo devuelve los eventos que se traslapan con el rango indicado.
+-- =========================================================
+CREATE PROCEDURE [dbo].[sp_GetCalendarEvents]
+    @UserId INT,
+    @StartDate DATETIME2(7),
+    @EndDate DATETIME2(7)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        e.EventId,
+        e.WorkOrderId,
+        e.Title,
+        e.StartAt,
+        e.EndAt,
+        e.Description
+    FROM WorkOrderCalendarEvent e
+    WHERE e.CreatedByUserId = @UserId
+      AND e.StartAt < @EndDate
+      AND e.EndAt > @StartDate
+    ORDER BY e.StartAt ASC;
+END
+GO
+
+USE FieldTech;
+GO
+
+-- =========================================================
+-- TABLA: WorkOrderHistory
+-- Esta tabla guarda el historial de acciones realizadas
+-- sobre una orden de trabajo.
+-- Permite auditar quién hizo una acción, qué tipo de acción fue,
+-- un detalle opcional y cuándo ocurrió.
+-- =========================================================
+CREATE TABLE [dbo].[WorkOrderHistory] (
+    [HistoryId]      INT IDENTITY(1,1) NOT NULL, -- Identificador único del historial
+    [WorkOrderId]    INT               NOT NULL, -- Orden de trabajo sobre la cual se realizó la acción
+    [UserId]         INT               NOT NULL, -- Usuario que realizó la acción
+    [ActionType]     NVARCHAR(50)      NOT NULL, -- Tipo de acción realizada (ejemplo: creación, asignación, cierre)
+    [ActionDetail]   NVARCHAR(500)     NULL, -- Detalle adicional de la acción
+    [CreatedAt]      DATETIME2(7)      NOT NULL CONSTRAINT DF_WorkOrderHistory_CreatedAt DEFAULT (SYSDATETIME()), -- Fecha y hora automática
+    CONSTRAINT PK_WorkOrderHistory PRIMARY KEY CLUSTERED ([HistoryId] ASC), -- Llave primaria
+    CONSTRAINT FK_WorkOrderHistory_Order FOREIGN KEY ([WorkOrderId]) REFERENCES [dbo].[WorkOrder]([WorkOrderId]), -- Relación con la orden de trabajo
+    CONSTRAINT FK_WorkOrderHistory_User FOREIGN KEY ([UserId]) REFERENCES [dbo].[Users]([UserId]) -- Relación con el usuario
+);
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_AddWorkOrderHistory
+-- Este procedimiento registra una nueva acción en el historial
+-- de una orden de trabajo.
+-- Se usa para guardar eventos importantes como cambios de estado,
+-- asignaciones, cierres, etc.
+-- Devuelve el Id del registro creado.
+-- =========================================================
+CREATE PROCEDURE [dbo].[sp_AddWorkOrderHistory]
+    @WorkOrderId INT,
+    @UserId INT,
+    @ActionType NVARCHAR(50),
+    @ActionDetail NVARCHAR(500) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Inserta un nuevo registro en el historial
+    INSERT INTO WorkOrderHistory(WorkOrderId, UserId, ActionType, ActionDetail)
+    VALUES(@WorkOrderId, @UserId, @ActionType, @ActionDetail);
+
+    -- Devuelve el Id del historial creado
+    SELECT SCOPE_IDENTITY() AS HistoryId;
+END
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_GetWorkOrderHistory
+-- Este procedimiento obtiene el historial completo de una orden de trabajo.
+-- También muestra el nombre del usuario que realizó cada acción.
+-- Los resultados se ordenan desde la acción más reciente.
+-- =========================================================
+CREATE PROCEDURE [dbo].[sp_GetWorkOrderHistory]
+    @WorkOrderId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        h.HistoryId,
+        h.WorkOrderId,
+        h.UserId,
+        h.ActionType,
+        h.ActionDetail,
+        h.CreatedAt,
+        u.FirstName + ' ' + u.LastName AS UserName
+    FROM WorkOrderHistory h
+    INNER JOIN Users u ON u.UserId = h.UserId
+    WHERE h.WorkOrderId = @WorkOrderId
+    ORDER BY h.CreatedAt DESC;
+END
+GO
