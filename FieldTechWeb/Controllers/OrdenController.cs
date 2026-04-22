@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Net.Http.Headers;
 
+
 namespace FieldTechWeb.Controllers
 {
     [ValidarSesion]
@@ -124,7 +125,19 @@ namespace FieldTechWeb.Controllers
             using var client = CrearCliente();
 
             var resultOrden = client.GetAsync(UrlAPI + $"Orden/ConsultarOrden?id={id}").Result;
-            if (resultOrden.StatusCode != HttpStatusCode.OK) return RedirectToAction("Dashboard");
+            if (resultOrden.StatusCode != HttpStatusCode.OK)
+                return RedirectToAction("Dashboard");
+
+            var notasResp = client.GetAsync(UrlAPI + $"Orden/ConsultarNotas?ordenId={id}").Result;
+            var historialResp = client.GetAsync(UrlAPI + $"Orden/ConsultarHistorial?ordenId={id}").Result;
+
+            var inicio = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-ddTHH:mm:ss");
+            var fin = DateTime.Now.AddMonths(2).ToString("yyyy-MM-ddTHH:mm:ss");
+            var eventosResp = client.GetAsync(UrlAPI + $"Orden/ConsultarEventosCalendario?inicio={inicio}&fin={fin}").Result;
+
+            var todosEventos = eventosResp.StatusCode == HttpStatusCode.OK
+                ? eventosResp.Content.ReadFromJsonAsync<List<EventoCalendario>>().Result ?? new()
+                : new List<EventoCalendario>();
 
             var vm = new DetalleOrdenViewModel
             {
@@ -134,7 +147,17 @@ namespace FieldTechWeb.Controllers
                 CheckIns = client.GetAsync(UrlAPI + $"Orden/ConsultarCheckIns?ordenId={id}").Result
                     .Content.ReadFromJsonAsync<List<CheckIn>>().Result ?? new(),
                 Mensajes = client.GetAsync(UrlAPI + $"Orden/ConsultarMensajes?ordenId={id}").Result
-                    .Content.ReadFromJsonAsync<List<Mensaje>>().Result ?? new()
+                    .Content.ReadFromJsonAsync<List<Mensaje>>().Result ?? new(),
+
+                Notas = notasResp.StatusCode == HttpStatusCode.OK
+                    ? notasResp.Content.ReadFromJsonAsync<List<NotaOrden>>().Result ?? new()
+                    : new(),
+
+                Historial = historialResp.StatusCode == HttpStatusCode.OK
+                    ? historialResp.Content.ReadFromJsonAsync<List<HistorialOrden>>().Result ?? new()
+                    : new(),
+
+                Eventos = todosEventos.Where(x => x.WorkOrderId == id || x.WorkOrderId == null).ToList()
             };
 
             return View(vm);
@@ -292,5 +315,41 @@ namespace FieldTechWeb.Controllers
         }
 
         #endregion
+
+        [HttpPost]
+        public IActionResult AgregarNota(int ordenId, string texto)
+        {
+            using var client = CrearCliente();
+            var url = UrlAPI + $"Orden/AgregarNota?ordenId={ordenId}";
+            var result = client.PostAsJsonAsync(url, new { Texto = texto }).Result;
+
+            if (result.StatusCode == HttpStatusCode.InternalServerError)
+                throw new Exception();
+
+            return RedirectToAction("Detalle", new { id = ordenId });
+        }
+
+        [HttpPost]
+        public IActionResult CrearEventoCalendario(int ordenId, string title, string? description, DateTime startAt, DateTime endAt)
+        {
+            using var client = CrearCliente();
+            var url = UrlAPI + "Orden/CrearEventoCalendario";
+
+            var payload = new
+            {
+                WorkOrderId = ordenId,
+                Title = title,
+                Description = description,
+                StartAt = startAt,
+                EndAt = endAt
+            };
+
+            var result = client.PostAsJsonAsync(url, payload).Result;
+
+            if (result.StatusCode == HttpStatusCode.InternalServerError)
+                throw new Exception();
+
+            return RedirectToAction("Detalle", new { id = ordenId });
+        }
     }
 }

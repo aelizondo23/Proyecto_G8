@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Dapper;
 using FieldTechApi.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -73,7 +74,7 @@ namespace FieldTechApi.Controllers
 
             if (result == null)
                 return BadRequest("Su información no se registró correctamente.");
-
+            RegistrarHistorial(context, (int)result.WorkOrderId, "CREAR_ORDEN", "Orden creada por cliente.");
             return Ok(result);
         }
 
@@ -108,7 +109,7 @@ namespace FieldTechApi.Controllers
 
             context.Execute("sp_CancelWorkOrder", parametros,
                 commandType: System.Data.CommandType.StoredProcedure);
-
+            RegistrarHistorial(context, id, "CANCELAR_ORDEN", "Orden cancelada correctamente.");
             return Ok("Orden cancelada correctamente.");
         }
 
@@ -132,7 +133,7 @@ namespace FieldTechApi.Controllers
 
             if (result == null)
                 return BadRequest("No se pudo aplicar a la orden.");
-
+            RegistrarHistorial(context, ordenId, "APLICAR_ORDEN", "Técnico aplicó a la orden.");
             return Ok("Te asignaste a la orden correctamente.");
         }
 
@@ -185,6 +186,7 @@ namespace FieldTechApi.Controllers
             if (result == null)
                 return BadRequest("Su información no se registró correctamente.");
 
+            RegistrarHistorial(context, ordenId, "ASIGNAR_TECNICO", $"Técnico asignado: {modelo.TechnicianUserId}.");
             return Ok(result);
         }
 
@@ -202,6 +204,15 @@ namespace FieldTechApi.Controllers
             context.Execute("sp_RespondAssignment", parametros,
                 commandType: System.Data.CommandType.StoredProcedure);
 
+            var workOrderId = ObtenerWorkOrderIdPorAsignacion(context, asignacionId);
+
+            RegistrarHistorial(
+                context,
+                workOrderId,
+                modelo.Aceptar ? "ACEPTAR_ASIGNACION" : "RECHAZAR_ASIGNACION",
+                modelo.Aceptar ? "Asignación aceptada por técnico." : "Asignación rechazada por técnico."
+            );
+
             return Ok(modelo.Aceptar ? "Asignación aceptada correctamente." : "Asignación rechazada.");
         }
 
@@ -215,6 +226,8 @@ namespace FieldTechApi.Controllers
             context.Execute("sp_CompleteAssignment", parametros,
                 commandType: System.Data.CommandType.StoredProcedure);
 
+            var workOrderId = ObtenerWorkOrderIdPorAsignacion(context, asignacionId);
+            RegistrarHistorial(context, workOrderId, "COMPLETAR_ASIGNACION", "Orden marcada como completada.");
             return Ok("Orden marcada como completada.");
         }
 
@@ -237,6 +250,7 @@ namespace FieldTechApi.Controllers
             if (result == null)
                 return BadRequest("Su información no se registró correctamente.");
 
+            RegistrarHistorial(context, ordenId, "CHECK_IN", "El técnico inició trabajo.");
             return Ok(result);
         }
 
@@ -251,6 +265,8 @@ namespace FieldTechApi.Controllers
             context.Execute("sp_CheckOut", parametros,
                 commandType: System.Data.CommandType.StoredProcedure);
 
+            var workOrderId = ObtenerWorkOrderIdPorCheckIn(context, checkInId);
+            RegistrarHistorial(context, workOrderId, "CHECK_OUT", "El técnico finalizó trabajo.");
             return Ok("Check-out registrado correctamente.");
         }
 
@@ -327,6 +343,192 @@ namespace FieldTechApi.Controllers
         }
 
         #endregion
+
+
+        public class NotaOrdenRequest
+        {
+            [Required]
+            public string Texto { get; set; } = string.Empty;
+        }
+
+        public class NotaOrdenResponse
+        {
+            public int NoteId { get; set; }
+            public int WorkOrderId { get; set; }
+            public int UserId { get; set; }
+            public string NoteText { get; set; } = string.Empty;
+            public DateTime CreatedAt { get; set; }
+            public string AuthorName { get; set; } = string.Empty;
+        }
+
+        public class HistorialOrdenResponse
+        {
+            public int HistoryId { get; set; }
+            public int WorkOrderId { get; set; }
+            public int UserId { get; set; }
+            public string ActionType { get; set; } = string.Empty;
+            public string? ActionDetail { get; set; }
+            public DateTime CreatedAt { get; set; }
+            public string UserName { get; set; } = string.Empty;
+        }
+
+        public class CrearEventoCalendarioRequest
+        {
+            public int? WorkOrderId { get; set; }
+
+            [Required]
+            public string Title { get; set; } = string.Empty;
+
+            public string? Description { get; set; }
+            public DateTime StartAt { get; set; }
+            public DateTime EndAt { get; set; }
+        }
+
+        public class EventoCalendarioResponse
+        {
+            public int EventId { get; set; }
+            public int? WorkOrderId { get; set; }
+            public string Title { get; set; } = string.Empty;
+            public DateTime StartAt { get; set; }
+            public DateTime EndAt { get; set; }
+            public string? Description { get; set; }
+        }
+
+        private void RegistrarHistorial(SqlConnection context, int workOrderId, string actionType, string? detail = null)
+        {
+            var p = new DynamicParameters();
+            p.Add("@WorkOrderId", workOrderId);
+            p.Add("@UserId", UserId);
+            p.Add("@ActionType", actionType);
+            p.Add("@ActionDetail", detail);
+
+            context.Execute("sp_AddWorkOrderHistory", p,
+                commandType: System.Data.CommandType.StoredProcedure);
+        }
+
+        #region Notas / Historial / Calendario
+
+        [HttpPost("AgregarNota")]
+        public IActionResult AgregarNota(int ordenId, NotaOrdenRequest modelo)
+        {
+            using var context = Conn();
+            var parametros = new DynamicParameters();
+            parametros.Add("@WorkOrderId", ordenId);
+            parametros.Add("@UserId", UserId);
+            parametros.Add("@NoteText", modelo.Texto);
+
+            try
+            {
+                var result = context.QueryFirstOrDefault<dynamic>(
+                    "sp_AddWorkOrderNote",
+                    parametros,
+                    commandType: System.Data.CommandType.StoredProcedure);
+
+                RegistrarHistorial(context, ordenId, "AGREGAR_NOTA", "Se agregó una observación.");
+                return Ok(result);
+            }
+            catch
+            {
+                return BadRequest("La nota no puede ir vacía.");
+            }
+        }
+
+        [HttpGet("ConsultarNotas")]
+        public IActionResult ConsultarNotas(int ordenId)
+        {
+            using var context = Conn();
+            var parametros = new DynamicParameters();
+            parametros.Add("@WorkOrderId", ordenId);
+
+            var result = context.Query<NotaOrdenResponse>(
+                "sp_GetWorkOrderNotes",
+                parametros,
+                commandType: System.Data.CommandType.StoredProcedure);
+
+            return Ok(result);
+        }
+
+        [HttpGet("ConsultarHistorial")]
+        public IActionResult ConsultarHistorial(int ordenId)
+        {
+            using var context = Conn();
+            var parametros = new DynamicParameters();
+            parametros.Add("@WorkOrderId", ordenId);
+
+            var result = context.Query<HistorialOrdenResponse>(
+                "sp_GetWorkOrderHistory",
+                parametros,
+                commandType: System.Data.CommandType.StoredProcedure);
+
+            return Ok(result);
+        }
+
+        [HttpPost("CrearEventoCalendario")]
+        public IActionResult CrearEventoCalendario(CrearEventoCalendarioRequest modelo)
+        {
+            using var context = Conn();
+            var parametros = new DynamicParameters();
+            parametros.Add("@WorkOrderId", modelo.WorkOrderId);
+            parametros.Add("@CreatedByUserId", UserId);
+            parametros.Add("@Title", modelo.Title);
+            parametros.Add("@StartAt", modelo.StartAt);
+            parametros.Add("@EndAt", modelo.EndAt);
+            parametros.Add("@Description", modelo.Description);
+
+            try
+            {
+                var result = context.QueryFirstOrDefault<dynamic>(
+                    "sp_CreateCalendarEvent",
+                    parametros,
+                    commandType: System.Data.CommandType.StoredProcedure);
+
+                if (modelo.WorkOrderId.HasValue)
+                    RegistrarHistorial(context, modelo.WorkOrderId.Value, "CREAR_EVENTO", "Evento de calendario creado.");
+
+                return Ok(result);
+            }
+            catch
+            {
+                return BadRequest("Rango de fechas inválido.");
+            }
+        }
+
+        [HttpGet("ConsultarEventosCalendario")]
+        public IActionResult ConsultarEventosCalendario(DateTime inicio, DateTime fin)
+        {
+            using var context = Conn();
+            var parametros = new DynamicParameters();
+            parametros.Add("@UserId", UserId);
+            parametros.Add("@StartDate", inicio);
+            parametros.Add("@EndDate", fin);
+
+            var result = context.Query<EventoCalendarioResponse>(
+                "sp_GetCalendarEvents",
+                parametros,
+                commandType: System.Data.CommandType.StoredProcedure);
+
+            return Ok(result);
+        }
+
+        #endregion
+
+        private int ObtenerWorkOrderIdPorAsignacion(SqlConnection context, int asignacionId)
+        {
+            var p = new DynamicParameters();
+            p.Add("@AssignmentId", asignacionId);
+
+            return context.QueryFirst<int>(
+                "SELECT WorkOrderId FROM Assignment WHERE AssignmentId = @AssignmentId", p);
+        }
+
+        private int ObtenerWorkOrderIdPorCheckIn(SqlConnection context, int checkInId)
+        {
+            var p = new DynamicParameters();
+            p.Add("@CheckInId", checkInId);
+
+            return context.QueryFirst<int>(
+                "SELECT WorkOrderId FROM CheckInLog WHERE CheckInId = @CheckInId", p);
+        }
 
         private SqlConnection Conn() =>
             new(_config.GetValue<string>("ConnectionStrings:DefaultConnection"));
