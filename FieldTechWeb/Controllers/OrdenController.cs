@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Net.Http.Headers;
 
-
 namespace FieldTechWeb.Controllers
 {
     [ValidarSesion]
@@ -31,24 +30,26 @@ namespace FieldTechWeb.Controllers
 
             if (TipoUsuario == "TECH")
             {
-                var url = UrlAPI + "Orden/MisAsignaciones";
+                var url = UrlAPI + "Orden/MisAsignaciones?status=ACCEPTED";
                 var result = client.GetAsync(url).Result;
 
-                if (result.StatusCode == HttpStatusCode.OK)
-                {
-                    var datos = result.Content.ReadFromJsonAsync<List<Asignacion>>().Result ?? new();
-                    return View("DashboardTecnico", datos);
-                }
-                else if (result.StatusCode == HttpStatusCode.InternalServerError)
-                {
-                    throw new Exception();
-                }
+                var urlCompletadas = UrlAPI + "Orden/MisAsignaciones?status=COMPLETED";
+                var resultCompletadas = client.GetAsync(urlCompletadas).Result;
 
-                return View("DashboardTecnico", new List<Asignacion>());
+                var activas = result.StatusCode == HttpStatusCode.OK
+                    ? result.Content.ReadFromJsonAsync<List<Asignacion>>().Result ?? new()
+                    : new List<Asignacion>();
+
+                var completadas = resultCompletadas.StatusCode == HttpStatusCode.OK
+                    ? resultCompletadas.Content.ReadFromJsonAsync<List<Asignacion>>().Result ?? new()
+                    : new List<Asignacion>();
+
+                ViewBag.Completadas = completadas;
+                return View("DashboardTecnico", activas);
             }
             else
             {
-                var url = UrlAPI + "Orden/ListarOrdenes?tamano=50";
+                var url = UrlAPI + "Orden/MisOrdenes?tamano=50";
                 var result = client.GetAsync(url).Result;
 
                 if (result.StatusCode == HttpStatusCode.OK)
@@ -76,8 +77,6 @@ namespace FieldTechWeb.Controllers
             var url = UrlAPI + $"Orden/ListarOrdenes?status=OPEN&soloDisponibles=true&categoria={categoria}&urgencia={urgencia}&zona={zona}";
             var result = client.GetAsync(url).Result;
 
-            
-
             if (result.StatusCode == HttpStatusCode.OK)
             {
                 var datos = result.Content.ReadFromJsonAsync<List<Orden>>().Result ?? new();
@@ -99,7 +98,7 @@ namespace FieldTechWeb.Controllers
         public IActionResult MisOrdenes()
         {
             using var client = CrearCliente();
-            var url = UrlAPI + "Orden/ListarOrdenes?tamano=100";
+            var url = UrlAPI + "Orden/MisOrdenes?tamano=100";
             var result = client.GetAsync(url).Result;
 
             if (result.StatusCode == HttpStatusCode.OK)
@@ -120,6 +119,21 @@ namespace FieldTechWeb.Controllers
         #region Detalle Orden
 
         [HttpGet]
+        public async Task<IActionResult> VerArchivo(int fileId)
+        {
+            using var client = CrearCliente();
+            var response = await client.GetAsync(UrlAPI + $"Orden/DescargarArchivo?fileId={fileId}");
+            if (!response.IsSuccessStatusCode) return NotFound();
+
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+            var contentType = response.Content.Headers.ContentType?.ToString() ?? "application/octet-stream";
+            var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
+                           ?? response.Content.Headers.ContentDisposition?.FileName
+                           ?? "archivo";
+            return File(bytes, contentType, fileName);
+        }
+
+        [HttpGet]
         public IActionResult Detalle(int id)
         {
             using var client = CrearCliente();
@@ -130,10 +144,8 @@ namespace FieldTechWeb.Controllers
 
             var notasResp = client.GetAsync(UrlAPI + $"Orden/ConsultarNotas?ordenId={id}").Result;
             var historialResp = client.GetAsync(UrlAPI + $"Orden/ConsultarHistorial?ordenId={id}").Result;
-
-            var inicio = DateTime.Now.AddMonths(-1).ToString("yyyy-MM-ddTHH:mm:ss");
-            var fin = DateTime.Now.AddMonths(2).ToString("yyyy-MM-ddTHH:mm:ss");
-            var eventosResp = client.GetAsync(UrlAPI + $"Orden/ConsultarEventosCalendario?inicio={inicio}&fin={fin}").Result;
+            var eventosResp = client.GetAsync(UrlAPI + $"Orden/ConsultarEventosOrden?ordenId={id}").Result;
+            var archivosResp = client.GetAsync(UrlAPI + $"Orden/ConsultarArchivos?ordenId={id}").Result;
 
             var todosEventos = eventosResp.StatusCode == HttpStatusCode.OK
                 ? eventosResp.Content.ReadFromJsonAsync<List<EventoCalendario>>().Result ?? new()
@@ -148,18 +160,19 @@ namespace FieldTechWeb.Controllers
                     .Content.ReadFromJsonAsync<List<CheckIn>>().Result ?? new(),
                 Mensajes = client.GetAsync(UrlAPI + $"Orden/ConsultarMensajes?ordenId={id}").Result
                     .Content.ReadFromJsonAsync<List<Mensaje>>().Result ?? new(),
-
                 Notas = notasResp.StatusCode == HttpStatusCode.OK
                     ? notasResp.Content.ReadFromJsonAsync<List<NotaOrden>>().Result ?? new()
                     : new(),
-
                 Historial = historialResp.StatusCode == HttpStatusCode.OK
                     ? historialResp.Content.ReadFromJsonAsync<List<HistorialOrden>>().Result ?? new()
                     : new(),
-
-                Eventos = todosEventos.Where(x => x.WorkOrderId == id || x.WorkOrderId == null).ToList()
+                Eventos = todosEventos,
+                Archivos = archivosResp.StatusCode == HttpStatusCode.OK
+                    ? archivosResp.Content.ReadFromJsonAsync<List<ArchivoOrden>>().Result ?? new()
+                    : new()
             };
 
+            ViewBag.UrlAPI = UrlAPI;
             return View(vm);
         }
 
@@ -274,7 +287,6 @@ namespace FieldTechWeb.Controllers
             return RedirectToAction("Dashboard");
         }
 
-
         [HttpPost]
         public IActionResult ResponderAsignacion(int asignacionId, bool aceptar, int ordenId)
         {
@@ -316,6 +328,8 @@ namespace FieldTechWeb.Controllers
 
         #endregion
 
+        #region Notas
+
         [HttpPost]
         public IActionResult AgregarNota(int ordenId, string texto)
         {
@@ -328,6 +342,10 @@ namespace FieldTechWeb.Controllers
 
             return RedirectToAction("Detalle", new { id = ordenId });
         }
+
+        #endregion
+
+        #region Calendario
 
         [HttpPost]
         public IActionResult CrearEventoCalendario(int ordenId, string title, string? description, DateTime startAt, DateTime endAt)
@@ -351,5 +369,30 @@ namespace FieldTechWeb.Controllers
 
             return RedirectToAction("Detalle", new { id = ordenId });
         }
+
+        #endregion
+
+        #region Archivos
+
+        [HttpPost]
+        public async Task<IActionResult> SubirArchivo(int ordenId, IFormFile archivo)
+        {
+            using var client = CrearCliente();
+            using var content = new MultipartFormDataContent();
+            using var stream = archivo.OpenReadStream();
+            var fileContent = new StreamContent(stream);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(archivo.ContentType);
+            content.Add(fileContent, "archivo", archivo.FileName);
+
+            var url = UrlAPI + $"Orden/SubirArchivo?ordenId={ordenId}";
+            var result = await client.PostAsync(url, content);
+
+            if (result.StatusCode == HttpStatusCode.InternalServerError)
+                throw new Exception();
+
+            return RedirectToAction("Detalle", new { id = ordenId });
+        }
+
+        #endregion
     }
 }

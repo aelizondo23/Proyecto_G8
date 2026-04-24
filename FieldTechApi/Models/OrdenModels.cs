@@ -11,6 +11,8 @@ namespace FieldTechApi.Models
         public string? LocationText { get; set; }
         public decimal? BudgetAmount { get; set; }
         public string Urgency { get; set; } = "NORMAL";
+        public string? ContactName { get; set; }
+        public string? ContactPhone { get; set; }
     }
 
     public class ActualizarOrdenRequest
@@ -21,6 +23,8 @@ namespace FieldTechApi.Models
         public string? Ubicacion { get; set; }
         public decimal? Presupuesto { get; set; }
         public string? Urgencia { get; set; }
+        public string? ContactName { get; set; }
+        public string? ContactPhone { get; set; }
     }
 
     public class OrdenResponse
@@ -34,6 +38,8 @@ namespace FieldTechApi.Models
         public string? Urgency { get; set; }
         public string? Status { get; set; }
         public DateTime? CreatedAt { get; set; }
+        public string? ContactName { get; set; }
+        public string? ContactPhone { get; set; }
         public string? ClientName { get; set; }
         public string? ClientDisplayName { get; set; }
         public string? ClientPhone { get; set; }
@@ -119,5 +125,15 @@ namespace FieldTechApi.Models
         public string? AvailabilityStatus { get; set; }
         public string? PortfolioUrl { get; set; }
         public int CompletedJobs { get; set; }
+    }
+
+    public class ArchivoOrdenResponse
+    {
+        public int FileId { get; set; }
+        public int WorkOrderId { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string MimeType { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public string UploaderName { get; set; } = string.Empty;
     }
 }

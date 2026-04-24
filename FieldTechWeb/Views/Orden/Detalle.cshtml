@@ -1,13 +1,18 @@
 @model FieldTechWeb.Models.DetalleOrdenViewModel
 @{
     ViewData["Title"] = "OT-" + Model.Orden.WorkOrderId;
-    var o              = Model.Orden;
-    var tipoUsuario    = Context.Session.GetString("TipoUsuario");
-    var userId         = Context.Session.GetInt32("UserId");
-    var dotS           = o.Status == "OPEN" ? "dot-green" : o.Status == "IN_PROGRESS" ? "dot-warn" : o.Status == "COMPLETED" ? "dot-muted" : "dot-red";
-    var dotU           = o.Urgency == "HIGH" ? "dot-red" : o.Urgency == "NORMAL" ? "dot-warn" : "dot-muted";
-    var miAsignacion   = Model.Asignaciones.FirstOrDefault(a => a.TechnicianUserId == userId);
+    var o = Model.Orden;
+    var tipoUsuario = Context.Session.GetString("TipoUsuario");
+    var userId = Context.Session.GetInt32("UserId");
+    var dotS = o.Status == "OPEN" ? "dot-green" : o.Status == "IN_PROGRESS" ? "dot-warn" : o.Status == "COMPLETED" ? "dot-muted" : "dot-red";
+    var dotU = o.Urgency == "HIGH" ? "dot-red" : o.Urgency == "NORMAL" ? "dot-warn" : "dot-muted";
+    var statusEs = o.Status == "OPEN" ? "Abierta" : o.Status == "IN_PROGRESS" ? "En progreso" : o.Status == "COMPLETED" ? "Completada" : o.Status == "CANCELLED" ? "Cancelada" : o.Status;
+    var urgenciaEs = o.Urgency == "HIGH" ? "Alta" : o.Urgency == "NORMAL" ? "Normal" : o.Urgency == "LOW" ? "Baja" : o.Urgency;
+    var miAsignacion = Model.Asignaciones.FirstOrDefault(a => a.TechnicianUserId == userId);
     var checkInAbierto = Model.CheckIns.FirstOrDefault(c => c.CheckOutAt == null);
+    var tecnicoAsignado = tipoUsuario == "TECH" && miAsignacion?.Status == "ACCEPTED";
+    var esCliente = tipoUsuario == "CLIENT";
+    var eventoOrden = Model.Eventos.FirstOrDefault(e => e.WorkOrderId == o.WorkOrderId);
 }
 
 <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
@@ -17,8 +22,8 @@
         <div class="muted">@(o.ClientDisplayName ?? o.ClientName) · @o.LocationText</div>
     </div>
     <div class="d-flex gap-2 flex-shrink-0">
-        <span class="status"><span class="dot @dotS"></span>@o.Status</span>
-        <span class="status"><span class="dot @dotU"></span>@o.Urgency</span>
+        <span class="status"><span class="dot @dotS"></span>@statusEs</span>
+        <span class="status"><span class="dot @dotU"></span>@urgenciaEs</span>
     </div>
 </div>
 
@@ -27,7 +32,7 @@
     <!-- ── COLUMNA IZQUIERDA ──────────────────────────── -->
     <div class="col-12 col-lg-8">
 
-        <!-- Detalles -->
+        <!-- Detalles — siempre visible -->
         <div class="glass p-3 p-md-4 mb-3">
             <h5 class="fw-bold mb-3 card-title">Detalles de la orden</h5>
             <div class="row g-3">
@@ -40,13 +45,32 @@
                     <div class="fw-bold">₡@o.BudgetAmount?.ToString("N0")</div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="muted" style="font-size:.82rem;">Contacto</div>
-                    <div>@o.ClientPhone</div>
-                </div>
-                <div class="col-6 col-md-3">
                     <div class="muted" style="font-size:.82rem;">Creada</div>
                     <div>@o.CreatedAt?.ToString("dd MMM yyyy")</div>
                 </div>
+                <div class="col-6 col-md-3">
+                    <div class="muted" style="font-size:.82rem;">Inicio estimado</div>
+                    <div>@(eventoOrden != null ? eventoOrden.StartAt.ToString("dd MMM yyyy HH:mm") : "Por definir")</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="muted" style="font-size:.82rem;">Fin estimado</div>
+                    <div>@(eventoOrden != null ? eventoOrden.EndAt.ToString("dd MMM yyyy HH:mm") : "Por definir")</div>
+                </div>
+                @if (esCliente || tecnicoAsignado)
+                {
+                    <div class="col-6 col-md-3">
+                        <div class="muted" style="font-size:.82rem;">Contacto en sitio</div>
+                        <div>@(o.ContactName ?? "—")</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="muted" style="font-size:.82rem;">Teléfono en sitio</div>
+                        <div>@(o.ContactPhone ?? "—")</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="muted" style="font-size:.82rem;">Contacto cliente</div>
+                        <div>@o.ClientPhone</div>
+                    </div>
+                }
                 @if (!string.IsNullOrEmpty(o.Description))
                 {
                     <div class="col-12">
@@ -57,135 +81,196 @@
             </div>
         </div>
 
-        <!-- Mensajes -->
-        <div class="glass p-3 p-md-4 mb-3">
-            <h5 class="fw-bold mb-3 card-title"><i class="bi bi-chat-dots me-2"></i>Mensajes</h5>
-            <div class="d-flex flex-column gap-2 mb-3" style="max-height:320px;overflow-y:auto;" id="msgList">
-                @if (!Model.Mensajes.Any())
-                {
-                    <div class="muted text-center py-3" style="font-size:.9rem;">Sin mensajes aún.</div>
-                }
-                @foreach (var m in Model.Mensajes)
-                {
-                    var esYo = m.SenderUserId == userId;
-                    <div class="d-flex @(esYo ? "justify-content-end" : "")">
-                        <div class="msg-bubble @(esYo ? "msg-yo" : "msg-otro")">
-                            <div class="muted mb-1" style="font-size:.76rem;">
-                                @m.SenderName · @m.CreatedAt?.ToString("HH:mm dd/MM")
+        @if (esCliente || tecnicoAsignado)
+        {
+            <!-- Mensajes -->
+            <div class="glass p-3 p-md-4 mb-3">
+                <h5 class="fw-bold mb-3 card-title"><i class="bi bi-chat-dots me-2"></i>Mensajes</h5>
+                <div class="d-flex flex-column gap-2 mb-3" style="max-height:320px;overflow-y:auto;" id="msgList">
+                    @if (!Model.Mensajes.Any())
+                    {
+                        <div class="muted text-center py-3" style="font-size:.9rem;">Sin mensajes aún.</div>
+                    }
+                    @foreach (var m in Model.Mensajes)
+                    {
+                        var esYo = m.SenderUserId == userId;
+                        <div class="d-flex @(esYo ? "justify-content-end" : "")">
+                            <div class="msg-bubble @(esYo ? "msg-yo" : "msg-otro")">
+                                <div class="muted mb-1" style="font-size:.76rem;">
+                                    @m.SenderName · @m.CreatedAt?.ToString("HH:mm dd/MM")
+                                </div>
+                                <div>@m.Body</div>
                             </div>
-                            <div>@m.Body</div>
                         </div>
+                    }
+                </div>
+                <form method="post" asp-controller="Orden" asp-action="EnviarMensaje"
+                      asp-route-ordenId="@o.WorkOrderId" class="d-flex gap-2">
+                    <input name="cuerpo" class="form-control" placeholder="Escribe un mensaje..." required />
+                    <button type="submit" class="btn btn-brand px-3">
+                        <i class="bi bi-send"></i>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Notas -->
+            <div class="glass p-3 p-md-4 mb-3">
+                <h5 class="fw-bold mb-3 card-title">
+                    <i class="bi bi-journal-text me-2"></i>Notas / Observaciones
+                </h5>
+                <form method="post" asp-controller="Orden" asp-action="AgregarNota" class="mb-3">
+                    <input type="hidden" name="ordenId" value="@o.WorkOrderId" />
+                    <div class="mb-2">
+                        <textarea name="texto" class="form-control" rows="3"
+                              placeholder="Escribe una observación..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-brand">
+                        <i class="bi bi-plus-circle me-1"></i>Guardar nota
+                    </button>
+                </form>
+                @if (Model.Notas != null && Model.Notas.Any())
+                {
+                    <div class="d-flex flex-column gap-2">
+                        @foreach (var nota in Model.Notas)
+                        {
+                            <div class="p-2 rounded-3"
+                                 style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
+                                <div class="fw-semibold">@nota.AuthorName</div>
+                                <div>@nota.NoteText</div>
+                                <div class="muted mt-1" style="font-size:.8rem;">
+                                    @nota.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="muted text-center py-3" style="font-size:.9rem;">Sin notas registradas.</div>
+                }
+            </div>
+
+            <!-- Check-ins -->
+            <div class="glass p-3 p-md-4 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0 card-title"><i class="bi bi-geo-alt me-2"></i>Check-ins</h5>
+                    @if (o.Status == "IN_PROGRESS" && tecnicoAsignado)
+                    {
+                        if (checkInAbierto == null)
+                        {
+                            <form method="post" asp-controller="Orden" asp-action="CheckIn"
+                                  asp-route-ordenId="@o.WorkOrderId">
+                                <button type="submit" class="btn btn-brand btn-sm">
+                                    <i class="bi bi-box-arrow-in-right me-1"></i>Check-in
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <form method="post" asp-controller="Orden" asp-action="CheckOut">
+                                <input type="hidden" name="ordenId" value="@o.WorkOrderId" />
+                                <input type="hidden" name="checkInId" value="@checkInAbierto.CheckInId" />
+                                <button type="submit" class="btn btn-ghost btn-sm">
+                                    <i class="bi bi-box-arrow-right me-1"></i>Check-out
+                                </button>
+                            </form>
+                        }
+                    }
+                </div>
+                @if (!Model.CheckIns.Any())
+                {
+                    <div class="muted text-center py-3" style="font-size:.9rem;">Sin registros de check-in.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr><th>Técnico</th><th>Entrada</th><th>Salida</th><th>Duración</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var c in Model.CheckIns)
+                                {
+                                    <tr>
+                                        <td>@c.TechnicianName</td>
+                                        <td>@c.CheckInAt?.ToString("HH:mm dd/MM")</td>
+                                        <td>
+                                            @if (c.CheckOutAt.HasValue)
+                                            {
+                                                @c.CheckOutAt.Value.ToString("HH:mm dd/MM")
+                                            }
+                                            else
+                                            {
+
+                                                <span class="status"><span class="dot dot-green"></span>Activo</span>
+                                            }
+                                        </td>
+                                        <td>@(c.DurationMinutes.HasValue? c.DurationMinutes + " min" : "—")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
                     </div>
                 }
             </div>
-            <form method="post" asp-controller="Orden" asp-action="EnviarMensaje"
-                  asp-route-ordenId="@o.WorkOrderId" class="d-flex gap-2">
-                <input name="cuerpo" class="form-control" placeholder="Escribe un mensaje..." required />
-                <button type="submit" class="btn btn-brand px-3">
-                    <i class="bi bi-send"></i>
-                </button>
-            </form>
-        </div>
-        <!-- Notas -->
-        <div class="glass p-3 p-md-4 mb-3">
-            <h5 class="fw-bold mb-3 card-title">
-                <i class="bi bi-journal-text me-2"></i>Notas / Observaciones
-            </h5>
 
-            <form method="post" asp-controller="Orden" asp-action="AgregarNota" class="mb-3">
-                <input type="hidden" name="ordenId" value="@o.WorkOrderId" />
-                <div class="mb-2">
-                    <textarea name="texto" class="form-control" rows="3"
-                              placeholder="Escribe una observación..." required></textarea>
-                </div>
-                <button type="submit" class="btn btn-brand">
-                    <i class="bi bi-plus-circle me-1"></i>Guardar nota
-                </button>
-            </form>
-
-            @if (Model.Notas != null && Model.Notas.Any())
-            {
-                <div class="d-flex flex-column gap-2">
-                    @foreach (var nota in Model.Notas)
-                    {
-                        <div class="p-2 rounded-3"
-                             style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
-                            <div class="fw-semibold">@nota.AuthorName</div>
-                            <div>@nota.NoteText</div>
-                            <div class="muted mt-1" style="font-size:.8rem;">
-                                @nota.CreatedAt.ToString("dd/MM/yyyy HH:mm")
-                            </div>
-                        </div>
-                    }
-                </div>
-            }
-            else
-            {
-                <div class="muted text-center py-3" style="font-size:.9rem;">
-                    Sin notas registradas.
-                </div>
-            }
-        </div>
-        <!-- Check-ins -->
-        <div class="glass p-3 p-md-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="fw-bold mb-0 card-title"><i class="bi bi-geo-alt me-2"></i>Check-ins</h5>
-                @if (o.Status == "IN_PROGRESS" && tipoUsuario == "TECH")
+            <!-- Archivos adjuntos -->
+            <div class="glass p-3 p-md-4">
+                <h5 class="fw-bold mb-3 card-title">
+                    <i class="bi bi-paperclip me-2"></i>Archivos adjuntos
+                </h5>
+                <form method="post" asp-controller="Orden" asp-action="SubirArchivo"
+                      enctype="multipart/form-data" class="mb-3 d-flex gap-2">
+                    <input type="hidden" name="ordenId" value="@o.WorkOrderId" />
+                    <input type="file" name="archivo" class="form-control"
+                           accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" required />
+                    <button type="submit" class="btn btn-brand px-3 flex-shrink-0">
+                        <i class="bi bi-upload"></i>
+                    </button>
+                </form>
+                @if (Model.Archivos != null && Model.Archivos.Any())
                 {
-                    if (checkInAbierto == null)
-                    {
-                        <form method="post" asp-controller="Orden" asp-action="CheckIn"
-                              asp-route-ordenId="@o.WorkOrderId">
-                            <button type="submit" class="btn btn-brand btn-sm">
-                                <i class="bi bi-box-arrow-in-right me-1"></i>Check-in
-                            </button>
-                        </form>
-                    }
-                    else
-                    {
-                        <form method="post" asp-controller="Orden" asp-action="CheckOut">
-                            <input type="hidden" name="ordenId"   value="@o.WorkOrderId" />
-                            <input type="hidden" name="checkInId" value="@checkInAbierto.CheckInId" />
-                            <button type="submit" class="btn btn-ghost btn-sm">
-                                <i class="bi bi-box-arrow-right me-1"></i>Check-out
-                            </button>
-                        </form>
-                    }
+                    <div class="row g-2">
+                        @foreach (var f in Model.Archivos)
+                        {
+                            <div class="col-6 col-md-4">
+                                <div class="p-2 rounded-3 text-center"
+                                     style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
+                                    @if (f.MimeType.StartsWith("image/"))
+                                    {
+                                        <a asp-controller="Orden" asp-action="VerArchivo" asp-route-fileId="@f.FileId" target="_blank">
+                                            <img src="@Url.Action("VerArchivo", "Orden", new { fileId = f.FileId })"
+                                                 class="img-fluid rounded mb-1"
+                                                 style="max-height:100px;object-fit:cover;" />
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a asp-controller="Orden" asp-action="VerArchivo" asp-route-fileId="@f.FileId" target="_blank">
+                                            <i class="bi bi-file-earmark fs-2 d-block mb-1"></i>
+                                        </a>
+                                    }
+                                    <div style="font-size:.8rem;" class="text-truncate">@f.FileName</div>
+                                    <div class="muted" style="font-size:.75rem;">@f.UploaderName</div>
+                                    <div class="muted" style="font-size:.75rem;">@f.CreatedAt.ToString("dd/MM HH:mm")</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="muted text-center py-3" style="font-size:.9rem;">Sin archivos adjuntos.</div>
                 }
             </div>
-            @if (!Model.CheckIns.Any())
-            {
-                <div class="muted text-center py-3" style="font-size:.9rem;">Sin registros de check-in.</div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table align-middle">
-                        <thead>
-                            <tr>
-                                <th>Técnico</th><th>Entrada</th><th>Salida</th><th>Duración</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var c in Model.CheckIns)
-                            {
-                                <tr>
-                                    <td>@c.TechnicianName</td>
-                                    <td>@c.CheckInAt?.ToString("HH:mm dd/MM")</td>
-                                    <td>
-                                        @if (c.CheckOutAt.HasValue)
-                                        { @c.CheckOutAt.Value.ToString("HH:mm dd/MM") }
-                                        else
-                                        { <span class="status"><span class="dot dot-green"></span>Activo</span> }
-                                    </td>
-                                    <td>@(c.DurationMinutes.HasValue ? c.DurationMinutes + " min" : "—")</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </div>
+        }
+        else
+        {
+            <div class="glass p-4 text-center muted">
+                <i class="bi bi-lock fs-2 d-block mb-2"></i>
+                Aplica a esta orden para acceder a los mensajes, notas y check-ins.
+            </div>
+        }
 
     </div>
 
@@ -197,10 +282,9 @@
             <h5 class="fw-bold mb-3 card-title">Acciones</h5>
             <div class="d-grid gap-2">
 
-                @* ── CLIENTE ── *@
-                @if (tipoUsuario == "CLIENT")
+                @if (esCliente)
                 {
-                    @if (o.Status == "OPEN")
+                    @if (o.Status != "COMPLETED" && o.Status != "CANCELLED")
                     {
                         <form method="post" asp-controller="Orden" asp-action="CancelarOrden"
                               asp-route-id="@o.WorkOrderId"
@@ -210,16 +294,13 @@
                             </button>
                         </form>
                     }
-
-                    @* ── Panel: asignar técnico (solo OPEN y con técnicos aplicados) ── *@
                     @if (o.Status == "OPEN" && Model.Asignaciones.Any())
                     {
                         <hr style="border-color:rgba(255,255,255,.10);" />
                         <div class="muted mb-2" style="font-size:.85rem;">
                             <i class="bi bi-person-check me-1"></i>Asignar técnico directamente
                         </div>
-                        <form method="post" asp-controller="Orden" asp-action="AsignarTecnico"
-                              id="formAsignar">
+                        <form method="post" asp-controller="Orden" asp-action="AsignarTecnico">
                             <input type="hidden" name="ordenId" value="@o.WorkOrderId" />
                             <div class="mb-2">
                                 <select name="tecnicoId" class="form-select" required>
@@ -251,7 +332,6 @@
                     }
                 }
 
-                @* ── TÉCNICO ── *@
                 @if (tipoUsuario == "TECH")
                 {
                     @if (miAsignacion == null && o.Status == "OPEN")
@@ -267,16 +347,16 @@
                     {
                         <form method="post" asp-controller="Orden" asp-action="ResponderAsignacion">
                             <input type="hidden" name="asignacionId" value="@miAsignacion.AssignmentId" />
-                            <input type="hidden" name="ordenId"      value="@o.WorkOrderId" />
-                            <input type="hidden" name="aceptar"      value="true" />
+                            <input type="hidden" name="ordenId" value="@o.WorkOrderId" />
+                            <input type="hidden" name="aceptar" value="true" />
                             <button type="submit" class="btn btn-brand w-100 mb-2">
                                 <i class="bi bi-check2-circle me-1"></i>Aceptar asignación
                             </button>
                         </form>
                         <form method="post" asp-controller="Orden" asp-action="ResponderAsignacion">
                             <input type="hidden" name="asignacionId" value="@miAsignacion.AssignmentId" />
-                            <input type="hidden" name="ordenId"      value="@o.WorkOrderId" />
-                            <input type="hidden" name="aceptar"      value="false" />
+                            <input type="hidden" name="ordenId" value="@o.WorkOrderId" />
+                            <input type="hidden" name="aceptar" value="false" />
                             <button type="submit" class="btn btn-danger-ghost w-100">
                                 <i class="bi bi-x-circle me-1"></i>Rechazar
                             </button>
@@ -287,7 +367,7 @@
                         <form method="post" asp-controller="Orden" asp-action="CompletarAsignacion"
                               onsubmit="return confirm('¿Marcar como completada?')">
                             <input type="hidden" name="asignacionId" value="@miAsignacion.AssignmentId" />
-                            <input type="hidden" name="ordenId"      value="@o.WorkOrderId" />
+                            <input type="hidden" name="ordenId" value="@o.WorkOrderId" />
                             <button type="submit" class="btn btn-brand w-100">
                                 <i class="bi bi-flag-fill me-1"></i>Marcar como completada
                             </button>
@@ -302,12 +382,12 @@
                 }
 
             </div>
+
             <!-- Historial -->
             <div class="glass p-3 p-md-4 mt-3">
                 <h5 class="fw-bold mb-3 card-title">
                     <i class="bi bi-clock-history me-2"></i>Historial
                 </h5>
-
                 @if (Model.Historial != null && Model.Historial.Any())
                 {
                     <div class="d-flex flex-column gap-2">
@@ -326,71 +406,35 @@
                 }
                 else
                 {
-                    <div class="muted text-center py-3" style="font-size:.9rem;">
-                        Sin historial disponible.
-                    </div>
+                    <div class="muted text-center py-3" style="font-size:.9rem;">Sin historial disponible.</div>
                 }
             </div>
+
             <!-- Calendario -->
-            <div class="glass p-3 p-md-4 mt-3">
-                <h5 class="fw-bold mb-3 card-title">
-                    <i class="bi bi-calendar-event me-2"></i>Calendario
-                </h5>
+            @if (esCliente && (Model.Eventos == null || !Model.Eventos.Any(e => e.WorkOrderId == o.WorkOrderId)))
+            {
+                <div class="glass p-3 p-md-4 mt-3">
+                    <h5 class="fw-bold mb-3 card-title">
+                        <i class="bi bi-calendar-event me-2"></i>Agendar fecha
+                    </h5>
+                    <form method="post" asp-controller="Orden" asp-action="CrearEventoCalendario" class="mb-3">
+                        <input type="hidden" name="ordenId" value="@o.WorkOrderId" />
+                        <div class="mb-2">
+                            <label class="form-label">Inicio</label>
+                            <input type="datetime-local" name="startAt" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fin estimado</label>
+                            <input type="datetime-local" name="endAt" class="form-control" required />
+                        </div>
+                        <input type="hidden" name="title" value="Visita técnica OT-@o.WorkOrderId" />
+                        <button type="submit" class="btn btn-brand w-100">
+                            <i class="bi bi-calendar-plus me-1"></i>Agendar fecha
+                        </button>
+                    </form>
+                </div>
+            }
 
-                <form method="post" asp-controller="Orden" asp-action="CrearEventoCalendario" class="mb-3">
-                    <input type="hidden" name="ordenId" value="@o.WorkOrderId" />
-
-                    <div class="mb-2">
-                        <label class="form-label">Título</label>
-                        <input type="text" name="title" class="form-control" required />
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label">Descripción</label>
-                        <input type="text" name="description" class="form-control" />
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label">Inicio</label>
-                        <input type="datetime-local" name="startAt" class="form-control" required />
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Fin</label>
-                        <input type="datetime-local" name="endAt" class="form-control" required />
-                    </div>
-
-                    <button type="submit" class="btn btn-brand w-100">
-                        <i class="bi bi-calendar-plus me-1"></i>Crear evento
-                    </button>
-                </form>
-
-                @if (Model.Eventos != null && Model.Eventos.Any())
-                {
-                    <div class="d-flex flex-column gap-2">
-                        @foreach (var e in Model.Eventos)
-                        {
-                            <div class="p-2 rounded-3"
-                                 style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
-                                <div class="fw-semibold">@e.Title</div>
-                                @if (!string.IsNullOrEmpty(e.Description))
-                                {
-                                    <div>@e.Description</div>
-                                }
-                                <div class="muted mt-1" style="font-size:.8rem;">
-                                    @e.StartAt.ToString("dd/MM/yyyy HH:mm") - @e.EndAt.ToString("dd/MM/yyyy HH:mm")
-                                </div>
-                            </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="muted text-center py-3" style="font-size:.9rem;">
-                        Sin eventos registrados.
-                    </div>
-                }
-            </div>
         </div>
 
         <!-- Técnicos asignados -->
@@ -407,13 +451,17 @@
                 @foreach (var a in Model.Asignaciones)
                 {
                     var adot = a.Status == "ACCEPTED" ? "dot-green"
-                             : a.Status == "PENDING"   ? "dot-warn"
-                             : a.Status == "COMPLETED" ? "dot-muted" : "dot-red";
+                    : a.Status == "PENDING" ? "dot-warn"
+                    : a.Status == "COMPLETED" ? "dot-muted" : "dot-red";
+                    var aStatusEs = a.Status == "ACCEPTED" ? "Aceptado"
+                    : a.Status == "PENDING" ? "Pendiente"
+                    : a.Status == "COMPLETED" ? "Completado"
+                    : a.Status == "CANCELLED" ? "Cancelado" : a.Status;
                     <div class="p-2 rounded-3 mb-2"
                          style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="fw-semibold">@a.TechnicianName</div>
-                            <span class="status"><span class="dot @adot"></span>@a.Status</span>
+                            <span class="status"><span class="dot @adot"></span>@aStatusEs</span>
                         </div>
                         <div class="muted mt-1" style="font-size:.82rem;">
                             @(a.Zone != null ? $"Zona: {a.Zone}" : "")
@@ -423,14 +471,11 @@
                                 <span> · Acordado: ₡@a.AgreedAmount.Value.ToString("N0")</span>
                             }
                         </div>
-
-                        @* El cliente puede asignar directamente desde la tarjeta si la orden está OPEN *@
                         @if (tipoUsuario == "CLIENT" && o.Status == "OPEN"
-                             && a.Status != "ACCEPTED" && a.Status != "CANCELLED")
+                                        && a.Status != "ACCEPTED" && a.Status != "CANCELLED")
                         {
-                            <form method="post" asp-controller="Orden" asp-action="AsignarTecnico"
-                                  class="mt-2">
-                                <input type="hidden" name="ordenId"   value="@o.WorkOrderId" />
+                            <form method="post" asp-controller="Orden" asp-action="AsignarTecnico" class="mt-2">
+                                <input type="hidden" name="ordenId" value="@o.WorkOrderId" />
                                 <input type="hidden" name="tecnicoId" value="@a.TechnicianUserId" />
                                 <button type="submit" class="btn btn-brand btn-sm w-100">
                                     <i class="bi bi-person-fill-check me-1"></i>Asignar

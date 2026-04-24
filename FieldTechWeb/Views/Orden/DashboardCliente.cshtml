@@ -2,8 +2,8 @@
 @{
     ViewData["Title"] = "Dashboard";
     ViewData["Active"] = "Dashboard";
-    var abiertas    = Model.Count(o => o.Status == "OPEN");
-    var enProgreso  = Model.Count(o => o.Status == "IN_PROGRESS");
+    var abiertas = Model.Count(o => o.Status == "OPEN");
+    var enProgreso = Model.Count(o => o.Status == "IN_PROGRESS");
     var completadas = Model.Count(o => o.Status == "COMPLETED");
 }
 
@@ -75,13 +75,15 @@
                     {
                         var dotU = o.Urgency == "HIGH" ? "dot-red" : o.Urgency == "NORMAL" ? "dot-warn" : "dot-muted";
                         var dotS = o.Status == "OPEN" ? "dot-green" : o.Status == "IN_PROGRESS" ? "dot-warn" : o.Status == "COMPLETED" ? "dot-muted" : "dot-red";
+                        var urgenciaEs = o.Urgency == "HIGH" ? "Alta" : o.Urgency == "NORMAL" ? "Normal" : "Baja";
+                        var statusEs = o.Status == "OPEN" ? "Abierta" : o.Status == "IN_PROGRESS" ? "En progreso" : o.Status == "COMPLETED" ? "Completada" : o.Status == "CANCELLED" ? "Cancelada" : o.Status;
                         <tr>
                             <td class="fw-bold muted">OT-@o.WorkOrderId</td>
                             <td>@o.Title</td>
                             <td><span class="chip">@o.Category</span></td>
                             <td>₡@o.BudgetAmount?.ToString("N0")</td>
-                            <td><span class="status"><span class="dot @dotU"></span>@o.Urgency</span></td>
-                            <td><span class="status"><span class="dot @dotS"></span>@o.Status</span></td>
+                            <td><span class="status"><span class="dot @dotU"></span>@urgenciaEs</span></td>
+                            <td><span class="status"><span class="dot @dotS"></span>@statusEs</span></td>
                             <td class="text-end">
                                 <a class="btn btn-sm btn-brand" asp-controller="Orden" asp-action="Detalle" asp-route-id="@o.WorkOrderId">
                                     <i class="bi bi-eye me-1"></i>Ver

@@ -3,7 +3,6 @@
     ViewData["Title"] = "Nueva orden";
     ViewData["Active"] = "CrearOrden";
 }
-
 <div class="d-flex align-items-center gap-3 mb-4">
     <a class="btn btn-ghost btn-sm" asp-controller="Orden" asp-action="MisOrdenes">
         <i class="bi bi-arrow-left"></i>
@@ -13,12 +12,10 @@
         <div class="muted">Publica una solicitud para que técnicos puedan aplicar.</div>
     </div>
 </div>
-
 @if (ViewBag.Mensaje != null)
 {
     <div class="alert alert-danger rounded-3 mb-3 py-2">@ViewBag.Mensaje</div>
 }
-
 <div class="glass p-3 p-md-4" style="max-width:720px;">
     <form method="post" asp-controller="Orden" asp-action="CrearOrden">
         <div class="row g-3">
@@ -29,7 +26,7 @@
             <div class="col-12">
                 <label class="form-label">Descripción</label>
                 <textarea asp-for="Description" class="form-control" rows="4"
-                    placeholder="Describe el trabajo, requisitos, herramientas necesarias..."></textarea>
+                          placeholder="Describe el trabajo, requisitos, herramientas necesarias..."></textarea>
             </div>
             <div class="col-12 col-md-6">
                 <label class="form-label">Categoría</label>
@@ -60,6 +57,21 @@
             <div class="col-12 col-md-6">
                 <label class="form-label">Presupuesto (₡)</label>
                 <input asp-for="BudgetAmount" type="number" class="form-control" placeholder="Ej. 50000" />
+            </div>
+
+            <div class="col-12">
+                <hr style="border-color:rgba(255,255,255,.10);" />
+                <div class="muted mb-2" style="font-size:.88rem;">
+                    <i class="bi bi-person-lines-fill me-1"></i>Datos de contacto en el lugar
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label">Nombre de contacto</label>
+                <input asp-for="ContactName" class="form-control" placeholder="Ej. Juan Pérez" />
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label">Teléfono de contacto</label>
+                <input asp-for="ContactPhone" class="form-control" placeholder="Ej. 8888-0000" />
             </div>
         </div>
         <div class="d-flex gap-2 mt-4">

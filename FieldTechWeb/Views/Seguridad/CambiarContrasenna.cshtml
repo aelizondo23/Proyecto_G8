@@ -44,6 +44,29 @@
     </form>
 </div>
 
+<!-- Modal éxito -->
+<div class="modal fade" id="modalExito" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass border-0">
+            <div class="modal-body text-center p-4">
+                <div style="font-size:3rem;">✅</div>
+                <h5 class="fw-bold mt-3 mb-2">¡Contraseña actualizada!</h5>
+                <p class="muted mb-4">Tu contraseña fue cambiada correctamente. Vuelve a iniciar sesión para continuar.</p>
+                <a asp-controller="Home" asp-action="Login" class="btn btn-brand px-4">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Ir al inicio de sesión
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script src="~/js/CambiarContrasenna.js" asp-append-version="true"></script>
+    @if (TempData["ContrasennaActualizada"] != null)
+    {
+        <script>
+            var modal = new bootstrap.Modal(document.getElementById('modalExito'));
+            modal.show();
+        </script>
+    }
 }

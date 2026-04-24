@@ -1,27 +1,45 @@
 @model FieldTechWeb.Models.PerfilUsuarioViewModel
 @{
-    ViewData["Title"]  = "Mi perfil";
+    ViewData["Title"] = "Mi perfil";
     ViewData["Active"] = "Perfil";
     var tipoUsuario = Context.Session.GetString("TipoUsuario");
-    var esTech      = tipoUsuario == "TECH";
+    var userId = Context.Session.GetInt32("UserId");
+    var esTech = tipoUsuario == "TECH";
 }
 
 <style>
-/* Evitar que el dropdown se recorte dentro del contenedor "glass" */
-.glass { overflow: visible; }
+    .glass {
+        overflow: visible;
+    }
 
-/* Forzar fondo claro y texto legible en selects y sus opciones */
-.form-select,
-.form-select:focus {
-  background-color: #fff;
-  color: #212529;
-  z-index: 1100;
-}
-.form-select option {
-  background-color: #fff;
-  color: #212529;
-}
-.brand-badge img { display:block; width:100%; height:100%; object-fit:cover; }
+    .form-select, .form-select:focus {
+        background-color: #fff;
+        color: #212529;
+        z-index: 1100;
+    }
+
+        .form-select option {
+            background-color: #fff;
+            color: #212529;
+        }
+
+    .avatar-ring {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid rgba(255,255,255,.15);
+        background: rgba(255,255,255,.06);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .avatar-ring img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 </style>
 
 <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
@@ -46,20 +64,32 @@
 
 <div class="row g-3">
 
-    <!-- -- Tarjeta lateral -- -->
+    <!-- ?? Tarjeta lateral ?? -->
     <div class="col-12 col-lg-4">
         <div class="glass p-3 p-md-4">
-            <div class="d-flex align-items-center gap-3">
-                <div class="brand-badge" style="width:56px;height:56px;border-radius:18px;overflow:hidden;">
-                    <img id="avatarPreview" src="@(Url.Content("~/img/default-avatar.png"))" alt="Avatar" style="border-radius:18px;" />
+
+            <div class="d-flex flex-column align-items-center gap-2 mb-3">
+                <div class="avatar-ring">
+                    <img id="avatarPreview"
+                         src="@Url.Action("VerFotoPerfil", "Seguridad", new { userId = userId })"
+                         onerror="this.src='https://ui-avatars.com/api/?name=@(Uri.EscapeDataString((Model?.FirstName ?? "") + "+" + (Model?.LastName ?? "")))&background=6c47ff&color=fff&size=80'"
+                         alt="Foto de perfil" />
                 </div>
-                <div>
-                    <div class="fw-bold fs-5">@Model?.FirstName @Model?.LastName</div>
-                    <div class="muted">@(esTech ? "Técnico Freelance" : "Cliente / Empresa")</div>
-                </div>
+                <form method="post" asp-controller="Seguridad" asp-action="SubirFotoPerfil"
+                      enctype="multipart/form-data" class="d-flex gap-2 align-items-center">
+                    <input type="file" name="foto" id="fotoInput" accept="image/*"
+                           class="form-control form-control-sm" style="max-width:180px;"
+                           onchange="previewFoto(this)" />
+                    <button type="submit" class="btn btn-brand btn-sm">
+                        <i class="bi bi-upload"></i>
+                    </button>
+                </form>
             </div>
-            <hr style="border-color: rgba(255,255,255,.12);" />
+
+            <hr style="border-color:rgba(255,255,255,.12);" />
+
             <div class="d-grid gap-2 mt-2">
+                <div class="fw-bold fs-5">@Model?.FirstName @Model?.LastName</div>
                 <div>
                     <div class="muted" style="font-size:.82rem;">Correo</div>
                     <div class="fw-semibold" style="font-size:.95rem;">@Model?.Email</div>
@@ -71,21 +101,23 @@
                         <div class="fw-semibold" style="font-size:.95rem;">@Model.Phone</div>
                     </div>
                 }
-                <div class="mt-2">
+                <div class="mt-1">
                     <span class="chip">
                         @if (esTech)
                         {
-                            <text><i class="bi bi-tools me-1"></i></text>
+                            <text><i class="bi bi-tools me-1"></i>Técnico Freelance</text>
                         }
                         else
                         {
-                            <text><i class="bi bi-building me-1"></i></text>
+
+                            <text><i class="bi bi-building me-1"></i>Cliente / Empresa</text>
                         }
-                        @(esTech ? "Técnico Freelance" : "Cliente / Empresa")
                     </span>
                 </div>
             </div>
-            <hr style="border-color: rgba(255,255,255,.12);" />
+
+            <hr style="border-color:rgba(255,255,255,.12);" />
+
             <div class="d-grid gap-2">
                 <a class="btn btn-ghost" asp-controller="Seguridad" asp-action="CambiarContrasenna">
                     <i class="bi bi-lock me-1"></i>Cambiar contraseña
@@ -97,29 +129,21 @@
         </div>
     </div>
 
-    <!-- -- Formulario de edición -- -->
-    <div class="col-12 col-lg-8">
+    <!-- ?? Columna derecha ?? -->
+    <div class="col-12 col-lg-8 d-flex flex-column gap-3">
+
         <div class="glass p-3 p-md-4">
             <h5 class="fw-bold mb-1 card-title">
                 @(esTech ? "Datos profesionales" : "Datos de contacto")
             </h5>
             <div class="muted mb-4" style="font-size:.88rem;">
                 @(esTech ? "Estos datos son visibles para los clientes en el marketplace."
-                         : "Información que verán los técnicos al recibir tu orden.")
+                                : "Información que verán los técnicos al recibir tu orden.")
             </div>
 
-            <form id="formPerfil" method="post" enctype="multipart/form-data"
-                  asp-controller="Seguridad" asp-action="Perfil">
-
-                <!-- Campo de avatar común -->
-                <div class="mb-3">
-                    <label class="form-label">Foto de perfil</label>
-                    <input name="AvatarFile" id="avatarInput" type="file" accept="image/*" class="form-control" />
-                </div>
-
+            <form method="post" asp-controller="Seguridad" asp-action="Perfil">
                 @if (esTech)
                 {
-                    <!-- Campos TECH -->
                     <div class="row g-3">
                         <div class="col-12 col-md-6">
                             <label class="form-label">Zona de trabajo</label>
@@ -142,7 +166,7 @@
                             </select>
                         </div>
                         <div class="col-12 col-md-6">
-                            <label class="form-label">Tarifa por hora (¢)</label>
+                            <label class="form-label">Tarifa por hora (?)</label>
                             <input asp-for="HourlyRate" type="number" class="form-control"
                                    placeholder="Ej. 15000" min="0" />
                         </div>
@@ -160,46 +184,189 @@
                 }
                 else
                 {
-                    <!-- Campos CLIENT -->
                     <div class="row g-3">
                         <div class="col-12 col-md-6">
                             <label class="form-label">Nombre de empresa / Display</label>
-                            <input asp-for="DisplayName" class="form-control"
-                                   placeholder="Ej. Constructora ABC" />
+                            <input asp-for="DisplayName" class="form-control" placeholder="Ej. Constructora ABC" />
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="form-label">Nombre de contacto</label>
-                            <input asp-for="ContactName" class="form-control"
-                                   placeholder="Ej. Juan Pérez" />
+                            <input asp-for="ContactName" class="form-control" placeholder="Ej. Juan Pérez" />
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="form-label">Teléfono de contacto</label>
-                            <input asp-for="ContactPhone" class="form-control"
-                                   placeholder="Ej. 8888-0000" />
+                            <input asp-for="ContactPhone" class="form-control" placeholder="Ej. 8888-0000" />
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="form-label">Ubicación</label>
-                            <input asp-for="LocationText" class="form-control"
-                                   placeholder="Ej. San José, Escazú" />
+                            <input asp-for="LocationText" class="form-control" placeholder="Ej. San José, Escazú" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Tipo de cuenta</label>
+                            <select asp-for="ClientType" class="form-select">
+                                <option value="">Seleccionar…</option>
+                                <option value="GENERAL">General</option>
+                                <option value="EMPRESA">Empresa</option>
+                                <option value="GOBIERNO">Gobierno</option>
+                                <option value="ONG">ONG</option>
+                            </select>
                         </div>
                     </div>
                 }
 
                 <div class="d-flex gap-2 mt-4">
-                    <a class="btn btn-ghost" asp-controller="Orden" asp-action="Dashboard">
-                        Cancelar
-                    </a>
+                    <a class="btn btn-ghost" asp-controller="Orden" asp-action="Dashboard">Cancelar</a>
                     <button type="submit" class="btn btn-brand ms-auto px-4">
                         <i class="bi bi-check2-circle me-1"></i>Guardar cambios
                     </button>
                 </div>
-
             </form>
         </div>
-    </div>
 
+        @if (esTech)
+        {
+            <!-- Educación -->
+            <div class="glass p-3 p-md-4">
+                <h5 class="fw-bold mb-3 card-title">
+                    <i class="bi bi-mortarboard me-2"></i>Educación
+                </h5>
+                <form method="post" asp-controller="Seguridad" asp-action="AddEducacion" class="mb-3">
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6">
+                            <input name="Institution" class="form-control" placeholder="Institución *" required />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <input name="Degree" class="form-control" placeholder="Título / Grado *" required />
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <input name="FieldOfStudy" class="form-control" placeholder="Área de estudio" />
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <input name="StartYear" type="number" class="form-control" placeholder="Inicio" min="1950" max="2099" />
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <input name="EndYear" type="number" class="form-control" placeholder="Fin" min="1950" max="2099" />
+                        </div>
+                        <div class="col-12 col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-brand w-100">
+                                <i class="bi bi-plus-circle me-1"></i>Agregar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                @if (Model?.Educacion != null && Model.Educacion.Any())
+                {
+                    <div class="d-flex flex-column gap-2">
+                        @foreach (var e in Model.Educacion)
+                        {
+                            <div class="d-flex justify-content-between align-items-start p-2 rounded-3"
+                                 style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
+                                <div>
+                                    <div class="fw-semibold">@e.Degree</div>
+                                    <div class="muted" style="font-size:.85rem;">@e.Institution</div>
+                                    @if (!string.IsNullOrEmpty(e.FieldOfStudy))
+                                    {
+                                        <div class="muted" style="font-size:.82rem;">@e.FieldOfStudy</div>
+                                    }
+                                    <div class="muted" style="font-size:.8rem;">
+                                        @(e.StartYear?.ToString() ?? "?") — @(e.EndYear?.ToString() ?? "Presente")
+                                    </div>
+                                </div>
+                                <form method="post" asp-controller="Seguridad" asp-action="DeleteEducacion">
+                                    <input type="hidden" name="educacionId" value="@e.EducationId" />
+                                    <button type="submit" class="btn btn-ghost btn-sm"
+                                            onclick="return confirm('¿Eliminar este registro?')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="muted text-center py-3" style="font-size:.9rem;">Sin registros de educación.</div>
+                }
+            </div>
+
+            <!-- Experiencia -->
+            <div class="glass p-3 p-md-4">
+                <h5 class="fw-bold mb-3 card-title">
+                    <i class="bi bi-briefcase me-2"></i>Experiencia laboral
+                </h5>
+                <form method="post" asp-controller="Seguridad" asp-action="AddExperiencia" class="mb-3">
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6">
+                            <input name="CompanyName" class="form-control" placeholder="Empresa *" required />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <input name="RoleName" class="form-control" placeholder="Rol / Puesto *" required />
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <input name="StartYear" type="number" class="form-control" placeholder="Inicio" min="1950" max="2099" />
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <input name="EndYear" type="number" class="form-control" placeholder="Fin" min="1950" max="2099" />
+                        </div>
+                        <div class="col-12 col-md-8">
+                            <input name="Description" class="form-control" placeholder="Descripción breve" />
+                        </div>
+                        <div class="col-12 d-flex justify-content-end">
+                            <button type="submit" class="btn btn-brand">
+                                <i class="bi bi-plus-circle me-1"></i>Agregar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                @if (Model?.Experiencia != null && Model.Experiencia.Any())
+                {
+                    <div class="d-flex flex-column gap-2">
+                        @foreach (var x in Model.Experiencia)
+                        {
+                            <div class="d-flex justify-content-between align-items-start p-2 rounded-3"
+                                 style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
+                                <div>
+                                    <div class="fw-semibold">@x.RoleName</div>
+                                    <div class="muted" style="font-size:.85rem;">@x.CompanyName</div>
+                                    @if (!string.IsNullOrEmpty(x.Description))
+                                    {
+                                        <div style="font-size:.85rem;">@x.Description</div>
+                                    }
+                                    <div class="muted" style="font-size:.8rem;">
+                                        @(x.StartYear?.ToString() ?? "?") — @(x.EndYear?.ToString() ?? "Presente")
+                                    </div>
+                                </div>
+                                <form method="post" asp-controller="Seguridad" asp-action="DeleteExperiencia">
+                                    <input type="hidden" name="experienciaId" value="@x.ExperienceId" />
+                                    <button type="submit" class="btn btn-ghost btn-sm"
+                                            onclick="return confirm('¿Eliminar este registro?')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="muted text-center py-3" style="font-size:.9rem;">Sin registros de experiencia.</div>
+                }
+            </div>
+        }
+
+    </div>
 </div>
 
 @section Scripts {
-    <script src="~/js/Perfil.js" asp-append-version="true"></script>
+    <script>
+        function previewFoto(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('avatarPreview').src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
 }

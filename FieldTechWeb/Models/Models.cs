@@ -22,6 +22,8 @@ namespace FieldTechWeb.Models
         public string? Urgency { get; set; }
         public string? Status { get; set; }
         public DateTime? CreatedAt { get; set; }
+        public string? ContactName { get; set; }
+        public string? ContactPhone { get; set; }
         public string? ClientName { get; set; }
         public string? ClientDisplayName { get; set; }
         public string? ClientPhone { get; set; }
@@ -89,6 +91,7 @@ namespace FieldTechWeb.Models
         public List<NotaOrden> Notas { get; set; } = new();
         public List<HistorialOrden> Historial { get; set; } = new();
         public List<EventoCalendario> Eventos { get; set; } = new();
+        public List<ArchivoOrden> Archivos { get; set; } = new();
     }
 
     public class RegistroUsuario
@@ -105,4 +108,15 @@ namespace FieldTechWeb.Models
     {
         public string Email { get; set; } = string.Empty;
     }
+
+    public class ArchivoOrden
+    {
+        public int FileId { get; set; }
+        public int WorkOrderId { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string MimeType { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public string UploaderName { get; set; } = string.Empty;
+    }
+
 }

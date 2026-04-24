@@ -1237,3 +1237,594 @@ BEGIN
     ORDER BY h.CreatedAt DESC;
 END
 GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_GetEventosPorOrden
+-- Este procedimiento trae los eventos por orden
+-- =========================================================
+
+CREATE OR ALTER PROCEDURE sp_GetEventosPorOrden
+    @WorkOrderId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT
+        e.EventId,
+        e.WorkOrderId,
+        e.Title,
+        e.StartAt,
+        e.EndAt,
+        e.Description
+    FROM WorkOrderCalendarEvent e
+    WHERE e.WorkOrderId = @WorkOrderId
+    ORDER BY e.StartAt ASC;
+END
+GO
+
+
+-- =========================================================
+-- TABLA: WorkOrderFile
+-- Esta tabla almacena los archivos adjuntos asociados
+-- a una orden de trabajo.
+-- Permite guardar imágenes, documentos y otros archivos
+-- subidos por el técnico asignado o el cliente.
+-- Incluye el nombre, tipo MIME, contenido en bytes
+-- y la fecha de subida.
+-- =========================================================
+CREATE TABLE [dbo].[WorkOrderFile] (
+    [FileId]           INT IDENTITY(1,1) NOT NULL,
+    [WorkOrderId]      INT               NOT NULL,
+    [UploadedByUserId] INT               NOT NULL,
+    [FileName]         NVARCHAR(255)     NOT NULL,
+    [MimeType]         NVARCHAR(100)     NOT NULL,
+    [FileData]         VARBINARY(MAX)    NOT NULL,
+    [CreatedAt]        DATETIME2(7)      NOT NULL CONSTRAINT DF_WorkOrderFile_CreatedAt DEFAULT (SYSDATETIME()),
+    CONSTRAINT PK_WorkOrderFile PRIMARY KEY CLUSTERED ([FileId] ASC),
+    CONSTRAINT FK_WorkOrderFile_Order FOREIGN KEY ([WorkOrderId]) REFERENCES [dbo].[WorkOrder]([WorkOrderId]),
+    CONSTRAINT FK_WorkOrderFile_User  FOREIGN KEY ([UploadedByUserId]) REFERENCES [dbo].[Users]([UserId])
+);
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_SubirArchivoOrden
+-- Este procedimiento registra un nuevo archivo adjunto
+-- asociado a una orden de trabajo.
+-- Recibe el contenido del archivo en bytes, su nombre,
+-- tipo MIME y el usuario que lo subió.
+-- Devuelve el Id del archivo creado.
+-- =========================================================
+CREATE PROCEDURE sp_SubirArchivoOrden
+    @WorkOrderId      INT,
+    @UploadedByUserId INT,
+    @FileName         NVARCHAR(255),
+    @MimeType         NVARCHAR(100),
+    @FileData         VARBINARY(MAX)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    INSERT INTO WorkOrderFile (WorkOrderId, UploadedByUserId, FileName, MimeType, FileData)
+    VALUES (@WorkOrderId, @UploadedByUserId, @FileName, @MimeType, @FileData);
+    SELECT SCOPE_IDENTITY() AS FileId;
+END
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_GetArchivosPorOrden
+-- Este procedimiento obtiene la lista de archivos adjuntos
+-- de una orden de trabajo.
+-- Devuelve el nombre, tipo, fecha de subida y el nombre
+-- completo del usuario que subió cada archivo.
+-- No incluye el contenido binario para optimizar la consulta.
+-- =========================================================
+CREATE PROCEDURE sp_GetArchivosPorOrden
+    @WorkOrderId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT
+        f.FileId,
+        f.WorkOrderId,
+        f.FileName,
+        f.MimeType,
+        f.CreatedAt,
+        u.FirstName + ' ' + u.LastName AS UploaderName
+    FROM WorkOrderFile f
+    INNER JOIN Users u ON u.UserId = f.UploadedByUserId
+    WHERE f.WorkOrderId = @WorkOrderId
+    ORDER BY f.CreatedAt DESC;
+END
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_GetArchivo
+-- Este procedimiento obtiene el contenido completo de un
+-- archivo adjunto por su Id.
+-- Devuelve el nombre, tipo MIME y los bytes del archivo
+-- para permitir su descarga o visualización.
+-- =========================================================
+CREATE PROCEDURE sp_GetArchivo
+    @FileId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT FileId, FileName, MimeType, FileData
+    FROM WorkOrderFile
+    WHERE FileId = @FileId;
+END
+GO
+
+
+-- =========================================================
+-- MODIFICACIÓN: WorkOrder
+-- Se agregan columnas ContactName y ContactPhone para
+-- registrar el nombre y teléfono de contacto específico
+-- del lugar donde se realizará el trabajo.
+-- =========================================================
+ALTER TABLE WorkOrder
+    ADD ContactName  NVARCHAR(150) NULL,
+        ContactPhone NVARCHAR(20)  NULL;
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_CreateWorkOrder (actualizado)
+-- Se agregan los parámetros ContactName y ContactPhone.
+-- =========================================================
+CREATE OR ALTER PROCEDURE sp_CreateWorkOrder
+    @ClientUserId INT,
+    @Title        NVARCHAR(200),
+    @Description  NVARCHAR(MAX) = NULL,
+    @Category     NVARCHAR(100) = NULL,
+    @LocationText NVARCHAR(255) = NULL,
+    @BudgetAmount DECIMAL(10,2) = NULL,
+    @Urgency      NVARCHAR(20)  = 'NORMAL',
+    @ContactName  NVARCHAR(150) = NULL,
+    @ContactPhone NVARCHAR(20)  = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM ClientProfile WHERE UserId = @ClientUserId)
+    BEGIN
+        RAISERROR('CLIENT_NOT_FOUND', 16, 1);
+        RETURN;
+    END
+
+    INSERT INTO WorkOrder (ClientUserId, Title, Description, Category, LocationText,
+                           BudgetAmount, Urgency, Status, ContactName, ContactPhone)
+    VALUES (@ClientUserId, @Title, @Description, @Category, @LocationText,
+            @BudgetAmount, @Urgency, 'OPEN', @ContactName, @ContactPhone);
+
+    SELECT SCOPE_IDENTITY() AS WorkOrderId;
+END
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_GetWorkOrder (actualizado)
+-- Se incluyen ContactName y ContactPhone en el resultado.
+-- =========================================================
+CREATE OR ALTER PROCEDURE sp_GetWorkOrder
+    @WorkOrderId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        wo.WorkOrderId,
+        wo.Title,
+        wo.Description,
+        wo.Category,
+        wo.LocationText,
+        wo.BudgetAmount,
+        wo.Urgency,
+        wo.Status,
+        wo.CreatedAt,
+        wo.ContactName,
+        wo.ContactPhone,
+        u.FirstName + ' ' + u.LastName AS ClientName,
+        cp.DisplayName                 AS ClientDisplayName,
+        cp.ContactPhone                AS ClientPhone
+    FROM WorkOrder wo
+    INNER JOIN ClientProfile cp ON cp.UserId = wo.ClientUserId
+    INNER JOIN Users         u  ON u.UserId  = wo.ClientUserId
+    WHERE wo.WorkOrderId = @WorkOrderId;
+END
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_ListWorkOrders (actualizado)
+-- Se incluyen ContactName y ContactPhone en el resultado.
+-- =========================================================
+CREATE OR ALTER PROCEDURE sp_ListWorkOrders
+    @Status          NVARCHAR(20)  = NULL,
+    @Category        NVARCHAR(100) = NULL,
+    @Urgency         NVARCHAR(20)  = NULL,
+    @Zone            NVARCHAR(100) = NULL,
+    @SoloDisponibles BIT           = 0,
+    @PageNum         INT           = 1,
+    @PageSize        INT           = 20
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        wo.WorkOrderId,
+        wo.Title,
+        wo.Description,
+        wo.Category,
+        wo.LocationText,
+        wo.BudgetAmount,
+        wo.Urgency,
+        wo.Status,
+        wo.CreatedAt,
+        wo.ContactName,
+        wo.ContactPhone,
+        u.FirstName + ' ' + u.LastName AS ClientName,
+        cp.DisplayName                 AS ClientDisplayName,
+        cp.ContactPhone                AS ClientPhone
+    FROM WorkOrder wo
+    INNER JOIN ClientProfile cp ON cp.UserId = wo.ClientUserId
+    INNER JOIN Users         u  ON u.UserId  = wo.ClientUserId
+    WHERE
+        (@Status   IS NULL OR wo.Status   = @Status)
+        AND (@Category IS NULL OR wo.Category = @Category)
+        AND (@Urgency  IS NULL OR wo.Urgency  = @Urgency)
+        AND (@SoloDisponibles = 0 OR (
+                wo.Status = 'OPEN'
+                AND NOT EXISTS (
+                    SELECT 1 FROM WorkOrderAssignment
+                    WHERE WorkOrderId = wo.WorkOrderId AND Status = 'ACCEPTED'
+                )
+            )
+        )
+    ORDER BY wo.CreatedAt DESC
+    OFFSET (@PageNum - 1) * @PageSize ROWS
+    FETCH NEXT @PageSize ROWS ONLY;
+END
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_UpdateWorkOrder (actualizado)
+-- Se agregan los parámetros ContactName y ContactPhone.
+-- =========================================================
+CREATE OR ALTER PROCEDURE sp_UpdateWorkOrder
+    @WorkOrderId  INT,
+    @Title        NVARCHAR(200) = NULL,
+    @Description  NVARCHAR(MAX) = NULL,
+    @Category     NVARCHAR(100) = NULL,
+    @LocationText NVARCHAR(255) = NULL,
+    @BudgetAmount DECIMAL(10,2) = NULL,
+    @Urgency      NVARCHAR(20)  = NULL,
+    @ContactName  NVARCHAR(150) = NULL,
+    @ContactPhone NVARCHAR(20)  = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM WorkOrder WHERE WorkOrderId = @WorkOrderId)
+    BEGIN
+        RAISERROR('WORKORDER_NOT_FOUND', 16, 1);
+        RETURN;
+    END
+
+    IF NOT EXISTS (SELECT 1 FROM WorkOrder WHERE WorkOrderId = @WorkOrderId AND Status = 'OPEN')
+    BEGIN
+        RAISERROR('WORKORDER_NOT_EDITABLE', 16, 1);
+        RETURN;
+    END
+
+    UPDATE WorkOrder
+    SET
+        Title        = ISNULL(@Title,        Title),
+        Description  = ISNULL(@Description,  Description),
+        Category     = ISNULL(@Category,     Category),
+        LocationText = ISNULL(@LocationText, LocationText),
+        BudgetAmount = ISNULL(@BudgetAmount, BudgetAmount),
+        Urgency      = ISNULL(@Urgency,      Urgency),
+        ContactName  = ISNULL(@ContactName,  ContactName),
+        ContactPhone = ISNULL(@ContactPhone, ContactPhone)
+    WHERE WorkOrderId = @WorkOrderId;
+
+    SELECT 'OK' AS Result;
+END
+GO
+
+
+-- =========================================================
+-- TABLA: ProfilePhoto
+-- Almacena la foto de perfil de cada usuario.
+-- Solo se guarda una foto por usuario (se reemplaza).
+-- =========================================================
+CREATE TABLE [dbo].[ProfilePhoto] (
+    [PhotoId]   INT IDENTITY(1,1) NOT NULL,
+    [UserId]    INT               NOT NULL,
+    [MimeType]  NVARCHAR(100)     NOT NULL,
+    [PhotoData] VARBINARY(MAX)    NOT NULL,
+    [CreatedAt] DATETIME2(7)      NOT NULL CONSTRAINT DF_ProfilePhoto_CreatedAt DEFAULT (SYSDATETIME()),
+    CONSTRAINT PK_ProfilePhoto PRIMARY KEY CLUSTERED ([PhotoId] ASC),
+    CONSTRAINT UQ_ProfilePhoto_User UNIQUE ([UserId])
+);
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_SubirFotoPerfil
+-- =========================================================
+CREATE OR ALTER PROCEDURE sp_SubirFotoPerfil
+    @UserId    INT,
+    @MimeType  NVARCHAR(100),
+    @PhotoData VARBINARY(MAX)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    MERGE ProfilePhoto AS target
+    USING (SELECT @UserId AS UserId) AS source
+    ON target.UserId = source.UserId
+    WHEN MATCHED THEN
+        UPDATE SET MimeType = @MimeType, PhotoData = @PhotoData, CreatedAt = SYSDATETIME()
+    WHEN NOT MATCHED THEN
+        INSERT (UserId, MimeType, PhotoData)
+        VALUES (@UserId, @MimeType, @PhotoData);
+
+    SELECT @UserId AS UserId;
+END
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_GetFotoPerfil
+-- =========================================================
+CREATE OR ALTER PROCEDURE sp_GetFotoPerfil
+    @UserId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT PhotoId, UserId, MimeType, PhotoData
+    FROM ProfilePhoto
+    WHERE UserId = @UserId;
+END
+GO
+
+
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_AddEducacion
+-- Agrega un registro de educación al perfil del técnico.
+-- =========================================================
+CREATE OR ALTER PROCEDURE sp_AddEducacion
+    @UserId       INT,
+    @Institution  NVARCHAR(200),
+    @Degree       NVARCHAR(200),
+    @FieldOfStudy NVARCHAR(200) = NULL,
+    @StartYear    INT           = NULL,
+    @EndYear      INT           = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    INSERT INTO TechnicianEducation (UserId, Institution, Degree, FieldOfStudy, StartYear, EndYear)
+    VALUES (@UserId, @Institution, @Degree, @FieldOfStudy, @StartYear, @EndYear);
+    SELECT SCOPE_IDENTITY() AS EducationId;
+END
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_GetEducacion
+-- Obtiene la lista de educación del técnico.
+-- =========================================================
+CREATE OR ALTER PROCEDURE sp_GetEducacion
+    @UserId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT EducationId, UserId, Institution, Degree, FieldOfStudy, StartYear, EndYear
+    FROM TechnicianEducation
+    WHERE UserId = @UserId
+    ORDER BY EndYear DESC, StartYear DESC;
+END
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_DeleteEducacion
+-- Elimina un registro de educación del técnico.
+-- Solo puede eliminar sus propios registros.
+-- =========================================================
+CREATE OR ALTER PROCEDURE sp_DeleteEducacion
+    @EducationId INT,
+    @UserId      INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DELETE FROM TechnicianEducation
+    WHERE EducationId = @EducationId AND UserId = @UserId;
+END
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_AddExperiencia
+-- Agrega un registro de experiencia laboral al técnico.
+-- =========================================================
+CREATE OR ALTER PROCEDURE sp_AddExperiencia
+    @UserId      INT,
+    @CompanyName NVARCHAR(200),
+    @RoleName    NVARCHAR(200),
+    @StartYear   INT           = NULL,
+    @EndYear     INT           = NULL,
+    @Description NVARCHAR(MAX) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    INSERT INTO TechnicianExperience (UserId, CompanyName, RoleName, StartYear, EndYear, Description)
+    VALUES (@UserId, @CompanyName, @RoleName, @StartYear, @EndYear, @Description);
+    SELECT SCOPE_IDENTITY() AS ExperienceId;
+END
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_GetExperiencia
+-- Obtiene la lista de experiencia laboral del técnico.
+-- =========================================================
+CREATE OR ALTER PROCEDURE sp_GetExperiencia
+    @UserId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT ExperienceId, UserId, CompanyName, RoleName, StartYear, EndYear, Description
+    FROM TechnicianExperience
+    WHERE UserId = @UserId
+    ORDER BY EndYear DESC, StartYear DESC;
+END
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_DeleteExperiencia
+-- Elimina un registro de experiencia laboral del técnico.
+-- Solo puede eliminar sus propios registros.
+-- =========================================================
+CREATE OR ALTER PROCEDURE sp_DeleteExperiencia
+    @ExperienceId INT,
+    @UserId       INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DELETE FROM TechnicianExperience
+    WHERE ExperienceId = @ExperienceId AND UserId = @UserId;
+END
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_UpdateClientProfile (actualizado)
+-- Se agrega ClientType como campo editable.
+-- =========================================================
+CREATE OR ALTER PROCEDURE sp_UpdateClientProfile
+    @UserId      INT,
+    @DisplayName NVARCHAR(200) = NULL,
+    @ContactName NVARCHAR(150) = NULL,
+    @ContactPhone NVARCHAR(20) = NULL,
+    @LocationText NVARCHAR(255) = NULL,
+    @ClientType  NVARCHAR(50)  = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE ClientProfile
+    SET
+        DisplayName  = ISNULL(@DisplayName,  DisplayName),
+        ContactName  = ISNULL(@ContactName,  ContactName),
+        ContactPhone = ISNULL(@ContactPhone, ContactPhone),
+        LocationText = ISNULL(@LocationText, LocationText),
+        ClientType   = ISNULL(@ClientType,   ClientType)
+    WHERE UserId = @UserId;
+
+    SELECT 'OK' AS Result;
+END
+GO
+
+-- =========================================================
+-- PROCEDIMIENTO: sp_GetClientProfile (actualizado)
+-- Se agrega ClientType al resultado.
+-- =========================================================
+CREATE OR ALTER PROCEDURE sp_GetClientProfile
+    @UserId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        u.UserId,
+        u.FirstName,
+        u.LastName,
+        u.Email,
+        cp.DisplayName,
+        cp.ContactName,
+        cp.ContactPhone,
+        cp.LocationText,
+        cp.ClientType
+    FROM Users u
+    INNER JOIN ClientProfile cp ON cp.UserId = u.UserId
+    WHERE u.UserId = @UserId;
+END
+GO
+
+
+
+
+CREATE TABLE [dbo].[TechnicianEducation] (
+    [EducationId]  INT IDENTITY(1,1) NOT NULL,
+    [UserId]       INT               NOT NULL,
+    [Institution]  NVARCHAR(200)     NOT NULL,
+    [Degree]       NVARCHAR(200)     NOT NULL,
+    [FieldOfStudy] NVARCHAR(200)     NULL,
+    [StartYear]    INT               NULL,
+    [EndYear]      INT               NULL,
+    CONSTRAINT PK_TechnicianEducation PRIMARY KEY CLUSTERED ([EducationId] ASC)
+);
+GO
+
+CREATE TABLE [dbo].[TechnicianExperience] (
+    [ExperienceId] INT IDENTITY(1,1) NOT NULL,
+    [UserId]       INT               NOT NULL,
+    [CompanyName]  NVARCHAR(200)     NOT NULL,
+    [RoleName]     NVARCHAR(200)     NOT NULL,
+    [StartYear]    INT               NULL,
+    [EndYear]      INT               NULL,
+    [Description]  NVARCHAR(MAX)     NULL,
+    CONSTRAINT PK_TechnicianExperience PRIMARY KEY CLUSTERED ([ExperienceId] ASC)
+);
+GO
+
+
+CREATE PROCEDURE sp_ListWorkOrdersByClient
+    @ClientUserId INT,
+    @PageNum      INT = 1,
+    @PageSize     INT = 50
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        wo.WorkOrderId,
+        wo.Title,
+        wo.Description,
+        wo.Category,
+        wo.LocationText,
+        wo.BudgetAmount,
+        wo.Urgency,
+        wo.Status,
+        wo.CreatedAt,
+        wo.ContactName,
+        wo.ContactPhone,
+        u.FirstName + ' ' + u.LastName AS ClientName,
+        cp.DisplayName                 AS ClientDisplayName,
+        cp.ContactPhone                AS ClientPhone
+    FROM dbo.WorkOrder wo
+    INNER JOIN dbo.ClientProfile cp ON cp.UserId = wo.ClientUserId
+    INNER JOIN dbo.Users         u  ON u.UserId  = wo.ClientUserId
+    WHERE wo.ClientUserId = @ClientUserId
+    ORDER BY wo.CreatedAt DESC
+    OFFSET (@PageNum - 1) * @PageSize ROWS
+    FETCH NEXT @PageSize ROWS ONLY;
+END
+GO
+
+CREATE OR ALTER PROCEDURE sp_UpdateClientProfile
+    @UserId       INT,
+    @DisplayName  NVARCHAR(200) = NULL,
+    @ContactName  NVARCHAR(150) = NULL,
+    @ContactPhone NVARCHAR(20)  = NULL,
+    @LocationText NVARCHAR(255) = NULL,
+    @ClientType   NVARCHAR(50)  = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE ClientProfile
+    SET
+        DisplayName  = ISNULL(@DisplayName,  DisplayName),
+        ContactName  = ISNULL(@ContactName,  ContactName),
+        ContactPhone = ISNULL(@ContactPhone, ContactPhone),
+        LocationText = ISNULL(@LocationText, LocationText),
+        ClientType   = ISNULL(@ClientType,   ClientType)
+    WHERE UserId = @UserId;
+
+    SELECT 'OK' AS Result;
+END
+GO

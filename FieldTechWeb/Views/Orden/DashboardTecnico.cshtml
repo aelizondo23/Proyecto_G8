@@ -2,15 +2,15 @@
 @{
     ViewData["Title"] = "Dashboard";
     ViewData["Active"] = "Dashboard";
-    var pendientes  = Model.Count(a => a.Status == "PENDING");
-    var enCurso     = Model.Count(a => a.Status == "ACCEPTED");
-    var completadas = Model.Count(a => a.Status == "COMPLETED");
+    var completadas = ViewBag.Completadas as List<FieldTechWeb.Models.Asignacion> ?? new();
+    var enCurso = Model.Count(a => a.Status == "ACCEPTED");
+    var totalComp = completadas.Count;
 }
 
 <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
     <div>
         <h2 class="mb-1 fw-bold">Mis órdenes asignadas</h2>
-        <div class="muted">Resumen de tu actividad: pendientes, en curso y completadas.</div>
+        <div class="muted">Resumen de tu actividad: en curso y completadas.</div>
     </div>
     <a class="btn btn-brand px-3" asp-controller="Orden" asp-action="Marketplace">
         <i class="bi bi-shop me-1"></i>Ver marketplace
@@ -18,15 +18,7 @@
 </div>
 
 <div class="row g-3 mb-3">
-    <div class="col-12 col-md-4">
-        <div class="kpi glass">
-            <div class="d-flex align-items-center justify-content-between">
-                <div><div class="label">Pendientes</div><div class="value">@pendientes</div></div>
-                <i class="bi bi-hourglass-split fs-2 muted"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-12 col-md-4">
+    <div class="col-12 col-md-6">
         <div class="kpi glass">
             <div class="d-flex align-items-center justify-content-between">
                 <div><div class="label">En curso</div><div class="value">@enCurso</div></div>
@@ -34,27 +26,26 @@
             </div>
         </div>
     </div>
-    <div class="col-12 col-md-4">
+    <div class="col-12 col-md-6">
         <div class="kpi glass">
             <div class="d-flex align-items-center justify-content-between">
-                <div><div class="label">Completadas</div><div class="value">@completadas</div></div>
+                <div><div class="label">Completadas</div><div class="value">@totalComp</div></div>
                 <i class="bi bi-check2-circle fs-2 muted"></i>
             </div>
         </div>
     </div>
 </div>
 
-<div class="glass p-3 p-md-4">
+<!-- Órdenes en curso -->
+<div class="glass p-3 p-md-4 mb-3">
     <div class="d-flex justify-content-between align-items-center mb-2">
-        <h5 class="mb-0 fw-bold card-title">Órdenes de trabajo</h5>
-        <span class="chip"><i class="bi bi-lightning-charge me-1"></i>Prioridad por urgencia</span>
+        <h5 class="mb-0 fw-bold card-title"><i class="bi bi-activity me-2"></i>En curso</h5>
     </div>
-
     @if (!Model.Any())
     {
-        <div class="text-center py-5 muted">
+        <div class="text-center py-4 muted">
             <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-            No tienes asignaciones aún. <a asp-controller="Orden" asp-action="Marketplace">Revisa el marketplace.</a>
+            No tienes órdenes en curso. <a asp-controller="Orden" asp-action="Marketplace">Revisa el marketplace.</a>
         </div>
     }
     else
@@ -68,7 +59,6 @@
                         <th>Categoría</th>
                         <th>Ubicación</th>
                         <th>Urgencia</th>
-                        <th>Estado</th>
                         <th class="text-end">Acción</th>
                     </tr>
                 </thead>
@@ -76,16 +66,63 @@
                     @foreach (var a in Model)
                     {
                         var dotU = a.Urgency == "HIGH" ? "dot-red" : a.Urgency == "NORMAL" ? "dot-warn" : "dot-muted";
-                        var dotS = a.Status == "ACCEPTED" ? "dot-green" : a.Status == "PENDING" ? "dot-warn" : a.Status == "COMPLETED" ? "dot-muted" : "dot-red";
+                        var urgEs = a.Urgency == "HIGH" ? "Alta" : a.Urgency == "NORMAL" ? "Normal" : "Baja";
                         <tr>
                             <td class="fw-bold muted">OT-@a.WorkOrderId</td>
                             <td>@a.Title</td>
                             <td><span class="chip">@a.Category</span></td>
                             <td class="muted">@a.LocationText</td>
-                            <td><span class="status"><span class="dot @dotU"></span>@a.Urgency</span></td>
-                            <td><span class="status"><span class="dot @dotS"></span>@a.Status</span></td>
+                            <td><span class="status"><span class="dot @dotU"></span>@urgEs</span></td>
                             <td class="text-end">
                                 <a class="btn btn-sm btn-brand" asp-controller="Orden" asp-action="Detalle" asp-route-id="@a.WorkOrderId">
+                                    <i class="bi bi-eye me-1"></i>Ver
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<!-- Órdenes completadas -->
+<div class="glass p-3 p-md-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0 fw-bold card-title"><i class="bi bi-check2-circle me-2"></i>Completadas</h5>
+    </div>
+    @if (!completadas.Any())
+    {
+        <div class="text-center py-4 muted">
+            <i class="bi bi-hourglass fs-1 d-block mb-2"></i>
+            Aún no has completado ninguna orden.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive mt-3">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Título</th>
+                        <th>Categoría</th>
+                        <th>Ubicación</th>
+                        <th>Presupuesto</th>
+                        <th class="text-end">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in completadas)
+                    {
+                        <tr>
+                            <td class="fw-bold muted">OT-@a.WorkOrderId</td>
+                            <td>@a.Title</td>
+                            <td><span class="chip">@a.Category</span></td>
+                            <td class="muted">@a.LocationText</td>
+                            <td>@(a.BudgetAmount.HasValue ? $"₡{a.BudgetAmount:N0}" : "—")</td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-ghost" asp-controller="Orden" asp-action="Detalle" asp-route-id="@a.WorkOrderId">
                                     <i class="bi bi-eye me-1"></i>Ver
                                 </a>
                             </td>
