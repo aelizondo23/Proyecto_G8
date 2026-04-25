@@ -1828,3 +1828,27 @@ BEGIN
     SELECT 'OK' AS Result;
 END
 GO
+
+
+CREATE OR ALTER PROCEDURE sp_GetTechnicianProfilePublico
+    @UserId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        u.UserId,
+        u.FirstName + ' ' + u.LastName AS FullName,
+        u.Email,
+        tp.Bio,
+        tp.HourlyRate,
+        tp.Zone,
+        tp.AvailabilityStatus,
+        tp.PortfolioUrl
+    FROM Users u
+    INNER JOIN TechnicianProfile tp ON tp.UserId = u.UserId
+    WHERE u.UserId = @UserId;
+END
+GO
+
+

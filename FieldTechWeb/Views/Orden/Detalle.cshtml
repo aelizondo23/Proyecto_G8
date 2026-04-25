@@ -13,6 +13,8 @@
     var tecnicoAsignado = tipoUsuario == "TECH" && miAsignacion?.Status == "ACCEPTED";
     var esCliente = tipoUsuario == "CLIENT";
     var eventoOrden = Model.Eventos.FirstOrDefault(e => e.WorkOrderId == o.WorkOrderId);
+    var urlAPI = ViewBag.UrlAPI as string ?? "";
+    var token = Context.Session.GetString("Token") ?? "";
 }
 
 <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
@@ -471,6 +473,10 @@
                                 <span> · Acordado: ₡@a.AgreedAmount.Value.ToString("N0")</span>
                             }
                         </div>
+                        <button type="button" class="btn btn-ghost btn-sm w-100 mt-2"
+                                onclick="verPerfil(@a.TechnicianUserId)">
+                            <i class="bi bi-person-circle me-1"></i>Ver perfil
+                        </button>
                         @if (tipoUsuario == "CLIENT" && o.Status == "OPEN"
                                         && a.Status != "ACCEPTED" && a.Status != "CANCELLED")
                         {
@@ -490,9 +496,88 @@
     </div>
 </div>
 
+<!-- Modal perfil técnico -->
+<div class="modal fade" id="modalPerfilTecnico" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content glass border-0">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Perfil del técnico</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" id="modalPerfilBody">
+                <div class="text-center py-4 muted">Cargando...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         var ml = document.getElementById('msgList');
         if (ml) ml.scrollTop = ml.scrollHeight;
+
+        var _urlAPI  = '@urlAPI';
+        var _token   = '@token';
+        var _fotoUrl = '@Url.Action("VerFotoPerfil", "Seguridad")';
+
+        function verPerfil(userId) {
+            var body = document.getElementById('modalPerfilBody');
+            body.innerHTML = '<div class="text-center py-4 muted">Cargando...</div>';
+            var modal = new bootstrap.Modal(document.getElementById('modalPerfilTecnico'));
+            modal.show();
+
+            fetch(_urlAPI + 'Seguridad/GetPerfilPublico?userId=' + userId, {
+                headers: { 'Authorization': 'Bearer ' + _token }
+            })
+            .then(r => r.json())
+            .then(p => {
+                var disponibilidad = p.AvailabilityStatus === 'AVAILABLE' ? 'Disponible'
+                    : p.AvailabilityStatus === 'BUSY' ? 'Ocupado' : 'No disponible';
+
+                var edu = (p.Educacion || []).map(e => `
+                    <div class="p-2 rounded-3 mb-2" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)">
+                        <div class="fw-semibold">${e.Degree}</div>
+                        <div class="muted">${e.Institution}</div>
+                        <div class="muted" style="font-size:.8rem">${e.StartYear ?? '?'} — ${e.EndYear ?? 'Presente'}</div>
+                    </div>`).join('') || '<div class="muted">Sin registros.</div>';
+
+                var exp = (p.Experiencia || []).map(e => `
+                    <div class="p-2 rounded-3 mb-2" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)">
+                        <div class="fw-semibold">${e.RoleName}</div>
+                        <div class="muted">${e.CompanyName}</div>
+                        <div style="font-size:.85rem">${e.Description ?? ''}</div>
+                        <div class="muted" style="font-size:.8rem">${e.StartYear ?? '?'} — ${e.EndYear ?? 'Presente'}</div>
+                    </div>`).join('') || '<div class="muted">Sin registros.</div>';
+
+                var portafolio = p.PortfolioUrl
+                    ? `<a href="${p.PortfolioUrl}" target="_blank" class="btn btn-ghost btn-sm mb-3">
+                           <i class="bi bi-link-45deg me-1"></i>Ver portafolio
+                       </a>` : '';
+
+                body.innerHTML = `
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <img src="${_fotoUrl}?userId=${p.UserId}"
+                             onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.FullName)}&background=6c47ff&color=fff&size=80'"
+                             style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.15);" />
+                        <div>
+                            <div class="fw-bold fs-5">${p.FullName}</div>
+                            <div class="muted">
+                                ${p.Zone ?? '—'} ·
+                                ${p.HourlyRate ? '₡' + p.HourlyRate.toLocaleString() + '/h' : 'Tarifa no definida'} ·
+                                ${disponibilidad}
+                            </div>
+                        </div>
+                    </div>
+                    ${p.Bio ? `<p class="mb-3">${p.Bio}</p>` : ''}
+                    ${portafolio}
+                    <h6 class="fw-bold mt-3 mb-2"><i class="bi bi-mortarboard me-2"></i>Educación</h6>
+                    ${edu}
+                    <h6 class="fw-bold mt-3 mb-2"><i class="bi bi-briefcase me-2"></i>Experiencia</h6>
+                    ${exp}`;
+            })
+            .catch(() => {
+                body.innerHTML = '<div class="muted text-center py-4">No se pudo cargar el perfil.</div>';
+            });
+        }
     </script>
 }

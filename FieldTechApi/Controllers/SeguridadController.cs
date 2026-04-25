@@ -260,5 +260,42 @@ namespace FieldTechApi.Controllers
         }
 
         #endregion
+
+        #region Perfil Público
+
+        [HttpGet("GetPerfilPublico")]
+        public IActionResult GetPerfilPublico(int userId)
+        {
+            using var context = Conn();
+            var parametros = new DynamicParameters();
+            parametros.Add("@UserId", userId);
+
+            var perfil = context.QueryFirstOrDefault<dynamic>("sp_GetTechnicianProfilePublico", parametros,
+                commandType: System.Data.CommandType.StoredProcedure);
+
+            if (perfil == null) return NotFound();
+
+            var educacion = context.Query<EducacionResponse>("sp_GetEducacion", parametros,
+                commandType: System.Data.CommandType.StoredProcedure);
+
+            var experiencia = context.Query<ExperienciaResponse>("sp_GetExperiencia", parametros,
+                commandType: System.Data.CommandType.StoredProcedure);
+
+            return Ok(new
+            {
+                perfil.UserId,
+                perfil.FullName,
+                perfil.Email,
+                perfil.Bio,
+                perfil.HourlyRate,
+                perfil.Zone,
+                perfil.AvailabilityStatus,
+                perfil.PortfolioUrl,
+                Educacion = educacion,
+                Experiencia = experiencia
+            });
+        }
+
+        #endregion
     }
 }
